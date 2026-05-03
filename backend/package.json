@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "Backend API for MindCare",
   "license": "ISC",
-  "author": "wawan gunadi",
+  "author": "wawan gunadi, Lukmanul Hakim",
   "type": "module",
-  "main": "index.js",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/server.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -17,6 +18,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.22.2",
+    "nodemon": "^3.1.14",
     "sequelize": "^6.37.8"
   }
 }
