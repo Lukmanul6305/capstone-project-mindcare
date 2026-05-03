@@ -1,12 +1,27 @@
-import jwt from "jsonwebtoken";
+import jwtUtils from "../utils/jwtUtils.js";
+import response from "../utils/response.js";
 
-export const verifyToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.sendStatus(401);
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-        if (err) return res.sendStatus(403);
-        req.email = decoded.email;
+const verifyToken = (req, res, next) => {
+    const authHeader = req.headers["authorization"];
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return response.failed(res, 401, "Akses ditolak. Token tidak ditemukan.");
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+        const decoded = jwtUtils.verifyAccessToken(token);
+        req.userId = decoded.userId;
+        req.name   = decoded.name;
+        req.email  = decoded.email;
         next();
-    });
-}
+    } catch (error) {
+        if (error.name === "TokenExpiredError") {
+            return response.failed(res, 401, "Access token kedaluwarsa. Silakan refresh token.");
+        }
+        return response.failed(res, 403, "Token tidak valid.");
+    }
+};
+
+export default verifyToken;
