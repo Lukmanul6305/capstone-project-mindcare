@@ -1,0 +1,183 @@
+import { useMemo, useState } from "react";
+import { FiMenu } from "react-icons/fi";
+
+import AppSidebar from "../../components/layout/AppSidebar";
+import StressIntroPanel from "../../components/stress/StressIntroPanel";
+import StressLoadingPanel from "../../components/stress/StressLoadingPanel";
+import StressQuizPanel from "../../components/stress/StressQuizPanel";
+import StressResultPanel from "../../components/stress/StressResultPanel";
+import stressQuestions from "../../data/stressQuestions";
+import { apiRequest } from "../../lib/api";
+
+const activityLabel = (aktivitas) => {
+  const map = {
+    membaca: "Membaca Buku",
+    journaling: "Menulis Jurnal",
+    olahraga: "Olahraga",
+  };
+  return map[aktivitas] || aktivitas;
+};
+
+const mapAnswersToKuesionerPayload = (answers) => {
+  const umur = Number(answers[0]) || 21;
+  const pekerjaan = stressQuestions[1].opts[answers[1]] ?? "mahasiswa";
+  const tingkat_stres = parseInt(stressQuestions[2].opts[answers[2]], 10) || 3;
+  const durasi_stres = Number(answers[3]) || 14;
+  const penyebab_stres = stressQuestions[4].opts[answers[4]] ?? "akademik";
+  const kualitas_tidur = parseInt(stressQuestions[5].opts[answers[5]], 10) || 3;
+  const waktu_luang = Number(answers[6]) || 90;
+  const mood = parseInt(stressQuestions[7].opts[answers[7]], 10) || 2;
+  const aktivitas_fisik = stressQuestions[8].opts[answers[8]] ?? "jarang";
+  const preferensi_olahraga = stressQuestions[9].opts[answers[9]] ?? "tidak";
+  const preferensi_membaca = stressQuestions[10].opts[answers[10]] ?? "ya";
+  const preferensi_journaling = stressQuestions[11].opts[answers[11]] ?? "tidak";
+
+  return {
+    umur,
+    pekerjaan,
+    tingkat_stres,
+    durasi_stres,
+    penyebab_stres,
+    kualitas_tidur,
+    waktu_luang,
+    mood,
+    aktivitas_fisik,
+    preferensi_olahraga,
+    preferensi_membaca,
+    preferensi_journaling,
+  };
+};
+
+const StressCheck = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [panel, setPanel] = useState("intro");
+  const [currentQ, setCurrentQ] = useState(0);
+  const [answers, setAnswers] = useState(new Array(stressQuestions.length).fill(null));
+  const [resultData, setResultData] = useState(null);
+
+  const startQuiz = () => {
+    setCurrentQ(0);
+    setAnswers(new Array(stressQuestions.length).fill(null));
+    setPanel("quiz");
+  };
+
+  const handleSelectAnswer = (value) => {
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[currentQ] = value;
+      return next;
+    });
+  };
+
+  const nextQuestion = () => {
+    if (answers[currentQ] === null) {
+      alert("Silakan pilih jawaban!");
+      return;
+    }
+    if (currentQ < stressQuestions.length - 1) {
+      setCurrentQ((prev) => prev + 1);
+      return;
+    }
+    setPanel("loading");
+
+    const payload = mapAnswersToKuesionerPayload(answers);
+    apiRequest("/api/kuesioner", { method: "POST", body: payload })
+      .then((json) => {
+        const rekomendasi = json?.payload?.rekomendasi ?? null;
+        setResultData(rekomendasi);
+
+        if (rekomendasi?.rekomendasi_utama?.rekomendasi_buku) {
+          const booksToSave = rekomendasi.rekomendasi_utama.rekomendasi_buku.map((b, i) => ({
+            id: `AI_REC_${Date.now()}_${i}`,
+            title: b.judul,
+            author: b.penulis,
+            categoryKeys: ["ai_recommendation", "selfhelp"],
+            category: b.kategori || "Self Help",
+            desc: b.deskripsi,
+            thumbnail: b.thumbnail,
+            match: 100,
+            reason: "Direkomendasikan oleh AI berdasarkan hasil kuesioner Anda."
+          }));
+          localStorage.setItem("mindcare_ai_books", JSON.stringify(booksToSave));
+        }
+
+        setPanel("result");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      })
+      .catch((err) => {
+        alert(err?.message || "Gagal mengirim kuesioner.");
+        setPanel("quiz");
+      });
+  };
+
+  const prevQuestion = () => {
+    if (currentQ > 0) setCurrentQ((prev) => prev - 1);
+  };
+
+  const mappedResult = useMemo(() => {
+    const activity = resultData?.rekomendasi_utama?.aktivitas ?? "";
+    const buku = resultData?.rekomendasi_utama?.rekomendasi_buku ?? [];
+    return {
+      insight: resultData?.insight?.alasan ?? "",
+      confidencePct: Math.round((resultData?.rekomendasi_utama?.confidence ?? 0) * 100),
+      activityLabel: activityLabel(activity),
+      duration: resultData?.rekomendasi_utama?.durasi ?? 0,
+      activityDetail: resultData?.rekomendasi_utama?.detail ?? "",
+      books: buku.map((b) => ({
+        title: b.judul,
+        author: b.penulis,
+        category: b.kategori,
+        description: b.deskripsi,
+        thumbnail: b.thumbnail,
+      })),
+    };
+  }, [resultData]);
+
+  return (
+    <div className="min-h-screen bg-[#F4F5F9] text-[#1E293B]">
+      <div className="flex min-h-screen">
+        <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} activeMenu="Cek Stress" />
+
+        <main className="flex-1 min-h-screen">
+          <div className="p-4 lg:hidden">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#1E293B] bg-white"
+            >
+              <FiMenu size={20} />
+            </button>
+          </div>
+
+          <header className="hidden items-center gap-4 px-8 pt-10 pb-6 lg:flex">
+            <div>
+              <h1 className="mb-1 text-3xl font-extrabold text-[#1E293B]">Cek Stress</h1>
+              <p className="font-medium text-[#64748B]">Ukur tingkat stres dengan kuesioner</p>
+            </div>
+          </header>
+
+          <div className="mx-auto max-w-4xl p-8 lg:p-12">
+            {panel === "intro" ? <StressIntroPanel onStart={startQuiz} /> : null}
+
+            {panel === "quiz" ? (
+              <StressQuizPanel
+                question={stressQuestions[currentQ]}
+                questionIndex={currentQ}
+                totalQuestions={stressQuestions.length}
+                selectedAnswer={answers[currentQ]}
+                onSelectAnswer={handleSelectAnswer}
+                onPrev={prevQuestion}
+                onNext={nextQuestion}
+              />
+            ) : null}
+
+            {panel === "loading" ? <StressLoadingPanel /> : null}
+
+            {panel === "result" && resultData ? <StressResultPanel result={mappedResult} onRetry={startQuiz} /> : null}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default StressCheck;

@@ -26,7 +26,7 @@ try {
 }
 
 app.get("/", (req, res) => {
-    response(200, "server siap", null, res);
+    response.success(res, 200, "Server siap.");
 })
 
 app.use("/api", router);

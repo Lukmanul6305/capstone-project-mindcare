@@ -42,13 +42,9 @@ export const registerSchema = Joi.object({
             "any.required": "Confirm password wajib diisi."
         }),
 
-    jenis_kelamin: Joi.string()
-        .valid("laki-laki", "perempuan")
-        .required()
-        .messages({
-            "any.only": "Jenis kelamin hanya boleh: laki-laki atau perempuan.",
-            "any.required": "Jenis kelamin wajib diisi."
-        }),
+    jenis_kelamin: Joi.string().valid("laki-laki", "perempuan").optional().messages({
+        "any.only": "Hanya ada laki-laki dan perempuan"
+    }),
 
     avatar: Joi.string()
         .max(255)
@@ -57,11 +53,10 @@ export const registerSchema = Joi.object({
         .messages({
             "string.max": "Avatar maksimal 255 karakter."
         }),
-
-    role: Joi.string().valid("user", "admin").default("user").messages({
+    role: Joi.string().valid("user", "admin").optional().messages({
         "any.only": "Hanya ada admin dan user"
     })
-});
+})
 
 export const loginSchema = Joi.object({
     email: Joi.string()
@@ -86,7 +81,7 @@ export const updateProfileSchema = Joi.object({
         "string.empty": "Nama tidak boleh kosong.",
         "string.min": "Nama minimal 2 karakter."
     }),
-    avatar: Joi.number().integer().optional().allow(null).messages({
-        "number.base": "Avatar harus berupa angka."
+    avatar: Joi.string().max(255).optional().allow(null, "").messages({
+        "string.max": "Avatar maksimal 255 karakter."
     })
 });
