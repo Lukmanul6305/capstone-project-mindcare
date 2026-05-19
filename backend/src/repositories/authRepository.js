@@ -33,6 +33,12 @@ const authRepository = {
     },
 
     async saveRefreshToken(userId, token) {
+        // Hapus semua token lama milik user untuk mencegah accumulation
+        await db.query(
+            "DELETE FROM tb_authentications WHERE user_id = ?",
+            { replacements: [userId], type: QueryTypes.DELETE }
+        );
+
         await db.query(
             "INSERT INTO tb_authentications (user_id, token) VALUES (?, ?)",
             { replacements: [userId, token], type: QueryTypes.INSERT }
