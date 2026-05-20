@@ -11,6 +11,7 @@ const olahragaRouter = Router();
 olahragaRouter.post("/", verifyToken, validate(olahragaSchema), olahragaController.createOlahraga);
 olahragaRouter.get("/me", verifyToken, olahragaController.getAllOlahragaByUserLogin);
 olahragaRouter.get("/statistik", verifyToken, olahragaController.getStatistikOlahraga);
+olahragaRouter.get("/statistik-per-jenis", verifyToken, olahragaController.getStatistikPerJenis);
 olahragaRouter.get("/:id", verifyToken, olahragaController.getOlahragaById);
 olahragaRouter.delete("/:id", verifyToken, olahragaController.deleteOlahraga);
 

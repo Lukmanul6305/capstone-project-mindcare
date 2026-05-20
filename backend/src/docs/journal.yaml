@@ -1,0 +1,40 @@
+tags:
+  - name: Journal
+    description: Jurnal harian user
+
+paths:
+  /journal:
+    post:
+      tags: [Journal]
+      summary: Buat entri jurnal baru
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                judul:
+                  type: string
+                  example: Hari yang melelahkan
+                isi:
+                  type: string
+                  example: Hari ini sangat berat tapi saya tetap bersyukur
+      responses:
+        "201":
+          description: Berhasil dibuat
+        "401":
+          description: Unauthorized
+
+    get:
+      tags: [Journal]
+      summary: Ambil semua jurnal user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Berhasil
+        "401":
+          description: Unauthorized

@@ -30,6 +30,10 @@ const olahragaService = {
     async getStatistikOlahraga(userId) {
         return olahragaRepository.getStatisticsByUserId(userId);
     },
+    
+    async getStatistikOlahragaPerJenis(userId) {
+        return olahragaRepository.getStatisticsGroupedByJenis(userId);
+    },
 
     async getAllOlahraga() {
         const olahraga = await olahragaRepository.findAllWithUser();

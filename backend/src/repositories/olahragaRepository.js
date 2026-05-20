@@ -103,6 +103,60 @@ const olahragaRepository = {
             bulan_ini: bulanIni
         };
     },
+    async getStatisticsGroupedByJenis(userId) {
+        const [overallStats] = await db.query(`
+        SELECT 
+            COUNT(*) as total_aktivitas,
+            COALESCE(SUM(jarak_km), 0) as total_jarak_km,
+            COALESCE(SUM(durasi_menit), 0) as total_durasi_menit,
+            COALESCE(AVG(jarak_km), 0) as rata_rata_jarak_km,
+            COALESCE(AVG(durasi_menit), 0) as rata_rata_durasi_menit
+        FROM tb_olahraga 
+        WHERE user_id = $1
+    `, {
+            bind: [userId]
+        });
+
+        const [statsByJenis] = await db.query(`
+        SELECT 
+            jenis,
+            COUNT(*) as total_aktivitas,
+            COALESCE(SUM(jarak_km), 0) as total_jarak_km,
+            COALESCE(SUM(durasi_menit), 0) as total_durasi_menit,
+            COALESCE(AVG(jarak_km), 0) as rata_rata_jarak_km,
+            COALESCE(AVG(durasi_menit), 0) as rata_rata_durasi_menit,
+            COALESCE(AVG((jarak_km / durasi_menit) * 60), 0) as rata_rata_kecepatan_km_per_jam
+        FROM tb_olahraga 
+        WHERE user_id = $1
+        GROUP BY jenis
+        ORDER BY jenis
+    `, {
+            bind: [userId]
+        });
+        const [aktivitasTerbaru] = await db.query(`
+        SELECT 
+            id,
+            jenis,
+            jarak_km,
+            durasi_menit,
+            rute_maps,
+            tanggal,
+            createdAt,
+            ROUND((jarak_km / NULLIF(durasi_menit, 0)) * 60, 2) as kecepatan_km_per_jam
+        FROM tb_olahraga 
+        WHERE user_id = $1
+        ORDER BY tanggal DESC, createdAt DESC
+        LIMIT 1
+    `, {
+            bind: [userId]
+        });
+
+        return {
+            overall: overallStats[0],
+            per_jenis: statsByJenis,
+            aktivitas_terbaru: aktivitasTerbaru[0] || null
+        };
+    },
 
     async findAllWithUser() {
         return await db.query(

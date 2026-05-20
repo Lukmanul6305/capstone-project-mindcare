@@ -1,20 +1,23 @@
 import express from "express";
+
 import authRoute from "./authRouter.js";
 import usersRouter from "./usersRouter.js";
 import journalRouter from "./journalRouter.js";
 import kuesionerRouter from "./kuesionerRouter.js";
 import olahragaRouter from "./olahragaRouter.js";
 import stressScanRouter from "./stressScanRouter.js";
-import rekomendasiRouter from "./rekomendasiRouter.js";
 
 const router = express.Router();
 
-router.use("/auth", authRoute);
-router.use("/users", usersRouter);
-router.use("/journal", journalRouter);
-router.use("/kuesioner", kuesionerRouter);
-router.use("/olahraga", olahragaRouter);
-router.use("/stress-scan", stressScanRouter);
-router.use("/rekomendasi", rekomendasiRouter);
+const routes = [
+    { path: "/auth", handler: authRoute },
+    { path: "/users", handler: usersRouter },
+    { path: "/journal", handler: journalRouter },
+    { path: "/kuesioner", handler: kuesionerRouter },
+    { path: "/olahraga", handler: olahragaRouter },
+    { path: "/stress-scan", handler: stressScanRouter },
+];
+
+routes.forEach(({ path, handler }) => router.use(path, handler));
 
 export default router;

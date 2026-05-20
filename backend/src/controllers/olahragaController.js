@@ -46,6 +46,14 @@ const olahragaController = {
             next(error);
         }
     },
+    async getStatistikPerJenis(req, res, next) {
+        try {
+            const statistik = await olahragaService.getStatistikOlahragaPerJenis(req.userId);
+            return response.success(res, 200, "Statistik per jenis olahraga berhasil diambil.", statistik);
+        } catch (error) {
+            next(error);
+        }
+    },
 
     async getAllOlahraga(req, res, next) {
         try {
