@@ -83,5 +83,18 @@ export const updateProfileSchema = Joi.object({
     }),
     avatar: Joi.string().max(255).optional().allow(null, "").messages({
         "string.max": "Avatar maksimal 255 karakter."
+    }),
+    password: Joi.string().min(6).max(255).optional().allow(null, "").messages({
+        "string.min": "Password minimal 6 karakter.",
+        "string.max": "Password maksimal 255 karakter."
+    }),
+    confirmPassword: Joi.string().valid(Joi.ref("password")).optional().allow(null, "").messages({
+        "any.only": "Password dan confirm password tidak cocok."
     })
+}).custom((value, helpers) => {
+    // Validasi khusus: jika password diisi, confirmPassword harus diisi juga
+    if (value.password && !value.confirmPassword) {
+        return helpers.error("any.required", { message: "Confirm password harus diisi jika password diubah." });
+    }
+    return value;
 });

@@ -1,0 +1,16 @@
+tags:
+  - name: Olahraga
+    description: Rekomendasi dan log olahraga
+
+paths:
+  /olahraga:
+    get:
+      tags: [Olahraga]
+      summary: Ambil rekomendasi olahraga
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Berhasil
+        "401":
+          description: Unauthorized

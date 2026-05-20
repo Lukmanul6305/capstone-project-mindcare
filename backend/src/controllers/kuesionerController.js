@@ -57,7 +57,7 @@ const kuesionerController = {
             next(error);
         }
     },
-
+    
     /**
      * DELETE /kuesioner/:id
      * Menghapus kuesioner milik user berdasarkan ID.

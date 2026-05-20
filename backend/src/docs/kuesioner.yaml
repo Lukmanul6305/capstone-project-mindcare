@@ -1,0 +1,86 @@
+tags:
+  - name: Kuesioner
+    description: Kuesioner dan rekomendasi aktivitas
+
+paths:
+  /kuesioner:
+    post:
+      tags: [Kuesioner]
+      summary: Buat kuesioner dan dapatkan rekomendasi AI
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mood:
+                  type: string
+                  example: sedih
+                tingkat_stres:
+                  type: integer
+                  example: 7
+                keluhan:
+                  type: string
+                  example: Sulit tidur dan mudah cemas
+      responses:
+        "201":
+          description: Berhasil membuat kuesioner dan rekomendasi
+        "401":
+          description: Unauthorized
+
+    get:
+      tags: [Kuesioner]
+      summary: Ambil semua kuesioner milik user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Berhasil
+        "404":
+          description: Belum ada data kuesioner
+        "401":
+          description: Unauthorized
+
+  /kuesioner/{id}:
+    get:
+      tags: [Kuesioner]
+      summary: Ambil detail kuesioner berdasarkan ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Berhasil
+        "404":
+          description: Data tidak ditemukan
+        "401":
+          description: Unauthorized
+
+    delete:
+      tags: [Kuesioner]
+      summary: Hapus kuesioner berdasarkan ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Berhasil dihapus
+        "404":
+          description: Data tidak ditemukan
+        "401":
+          description: Unauthorized
