@@ -10,11 +10,11 @@ const options = {
         },
         servers: [
             {
-                url: process.env.API_BASE_URL || "http://localhost:3000",
+                url: `${process.env.API_BASE_URL}/api` || "http://localhost:3000/api",
                 description: "API Server"
             },
             {
-                url: "https://capstone-project-mindcare.vercel.app",
+                url: "https://capstone-project-mindcare.vercel.app/api",
                 description: "Production"
             }
         ],
