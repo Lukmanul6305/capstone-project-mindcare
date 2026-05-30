@@ -67,7 +67,7 @@ Memberikan rekomendasi buku self-development dan kesehatan mental.
 ### 1. Clone repository
 
 ```bash
-git clone https://github.com/Wwngnd/Mindcare-Fullstack.git
+git clone https://github.com/Lukmanul6305/capstone-project-mindcare.git
 ```
 ### 2. Frontend
 
