@@ -1,35 +1,15 @@
 import { FiSave } from "react-icons/fi";
 
-const formatElapsed = (totalSeconds) => {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  if (h > 0) {
-    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  }
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-};
-
 const JournalWritePanel = ({
   title,
   content,
   onTitleChange,
   onContentChange,
   onSave,
-  elapsedSeconds,
-  timerActive,
 }) => {
   return (
     <div className="relative rounded-[32px] border border-gray-200 bg-white p-8 shadow-sm">
       <div className="absolute right-8 top-6 flex items-center gap-3">
-        <span
-          className={`min-w-[4.5rem] text-right font-mono text-sm font-bold tabular-nums ${
-            timerActive ? "text-[#1E293B]" : "text-gray-400"
-          }`}
-          aria-live="polite"
-        >
-          {timerActive ? formatElapsed(elapsedSeconds) : "--:--"}
-        </span>
         <button
           type="button"
           onClick={onSave}

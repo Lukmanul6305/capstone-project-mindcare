@@ -197,8 +197,6 @@ const Journaling = () => {
                 onTitleChange={handleTitleChange}
                 onContentChange={handleContentChange}
                 onSave={handleSave}
-                elapsedSeconds={elapsedSeconds}
-                timerActive={timerRunning}
               />
             ) : (
               <JournalHistoryPanel journals={journals} onDelete={handleDeleteRequest} />

@@ -32,6 +32,13 @@ const navClass = (active) =>
 const disabledNavClass =
   "flex w-full cursor-not-allowed items-center gap-3 rounded-xl border-2 border-transparent px-4 py-2.5 text-left text-sm font-bold text-[#94A3B8] opacity-60";
 
+const profileCardClass = (active) =>
+  `flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition-all ${
+    active
+      ? "border-[#1E293B] bg-[#A855F7] text-white shadow-[3px_3px_0px_0px_#1E293B]"
+      : "border-[#E2E8F0] bg-white text-[#1E293B] hover:bg-[#F8FAFC]"
+  }`;
+
 const AppSidebar = ({ isOpen, onClose, activeMenu = "Dashboard", navigationLocked = false }) => {
   const [user, setUser] = useState(readAppData("user", {}));
   const initial = (user?.name || user?.email || "U").trim().charAt(0).toUpperCase();
@@ -44,20 +51,6 @@ const AppSidebar = ({ isOpen, onClose, activeMenu = "Dashboard", navigationLocke
 
   return (
     <>
-      {activeMenu !== "Profile" && !navigationLocked ? (
-        <Link
-          to="/profile"
-          className="fixed right-4 top-4 z-40 flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 border-[#1E293B] bg-white font-extrabold text-[#1E293B] shadow-[4px_4px_0px_0px_#1E293B] transition-all hover:-translate-y-0.5 lg:right-8"
-          aria-label="Buka profile"
-        >
-          {user?.avatar ? (
-            <img src={getAvatarSrc(user.avatar)} alt="Profile" className="h-full w-full object-cover" />
-          ) : (
-            initial
-          )}
-        </Link>
-      ) : null}
-
       {isOpen ? <button className="fixed inset-0 z-30 bg-black/20 lg:hidden" onClick={onClose} /> : null}
       <aside
         className={`fixed top-0 left-0 z-50 h-screen w-64 border-r border-[#E2E8F0] bg-white flex flex-col transition-transform duration-300 lg:sticky lg:translate-x-0 ${
@@ -117,6 +110,38 @@ const AppSidebar = ({ isOpen, onClose, activeMenu = "Dashboard", navigationLocke
             );
           })}
         </nav>
+
+        <div className="border-t border-[#E2E8F0] p-4">
+          {navigationLocked && activeMenu !== "Profile" ? (
+            <button type="button" className="flex w-full cursor-not-allowed items-center gap-3 rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] p-3 text-left text-[#94A3B8] opacity-70" disabled>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#CBD5E1] bg-white font-extrabold">
+                {user?.avatar ? (
+                  <img src={getAvatarSrc(user.avatar)} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  initial
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold">{user?.name || "Profile"}</p>
+                <p className="truncate text-xs">{user?.email || "Buka profil"}</p>
+              </div>
+            </button>
+          ) : (
+            <Link to="/profile" className={profileCardClass(activeMenu === "Profile")} aria-label="Buka profile">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#1E293B] bg-white font-extrabold text-[#1E293B]">
+                {user?.avatar ? (
+                  <img src={getAvatarSrc(user.avatar)} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  initial
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold">{user?.name || "Profile"}</p>
+                <p className="truncate text-xs opacity-80">{user?.email || "Lihat profil"}</p>
+              </div>
+            </Link>
+          )}
+        </div>
       </aside>
     </>
   );

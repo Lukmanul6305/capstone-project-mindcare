@@ -9,6 +9,11 @@ import BooksSessionTimer from "../../components/books/BooksSessionTimer";
 import AppSidebar from "../../components/layout/AppSidebar";
 import booksData from "../../data/booksData";
 import { useAlertPopup } from "../../hooks/useAlertPopup";
+import {
+  createBookRead,
+  createBookSession,
+  getMyBookRecommendations,
+} from "../../lib/api";
 import { pickBookCategoryKeys } from "../../lib/bookCategories";
 import { normalizeThumbnailUrl } from "../../lib/bookCoverResolver";
 import { getBookSessions, saveBookSessions } from "../../lib/mindcareBookSessions";
@@ -33,6 +38,35 @@ const normalizeAiBooks = (storedBooks) => (
     : []
 );
 
+const mapRecommendedBooksFromApi = (apiBooks) => {
+  const items = Array.isArray(apiBooks) ? apiBooks : [];
+  const dedup = new Map();
+
+  items.forEach((book, index) => {
+    const title = String(book?.judul || "").trim();
+    const author = String(book?.penulis || "").trim();
+    if (!title) return;
+
+    const key = `${title.toLowerCase()}::${author.toLowerCase()}`;
+    if (dedup.has(key)) return;
+
+    const rawCategory = String(book?.kategori || "").trim();
+    dedup.set(key, {
+      id: `API_REC_${book?.id ?? index}`,
+      title,
+      author: author || "Penulis tidak diketahui",
+      category: rawCategory || "Self Help",
+      categoriesRaw: rawCategory,
+      desc: book?.deskripsi || "Rekomendasi buku untuk membantu pemulihan stres.",
+      thumbnail: normalizeThumbnailUrl(book?.thumbnail),
+      match: 100,
+      reason: "Direkomendasikan oleh AI berdasarkan hasil kuesioner Anda.",
+    });
+  });
+
+  return Array.from(dedup.values());
+};
+
 const Books = () => {
   const { showAlert } = useAlertPopup();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,16 +74,37 @@ const Books = () => {
   const [selectedBook, setSelectedBook] = useState(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
-  const [aiBooks] = useState(() => normalizeAiBooks(readUserData("ai_books", [])));
+  const [savingSession, setSavingSession] = useState(false);
+  const [aiBooks, setAiBooks] = useState(() => normalizeAiBooks(readUserData("ai_books", [])));
   const sessionStartedRef = useRef(false);
   const exploredBooksRef = useRef([]);
 
   useEffect(() => {
-    const storedBooks = readUserData("ai_books", []);
-    const normalizedBooks = normalizeAiBooks(storedBooks);
-    if (JSON.stringify(storedBooks) !== JSON.stringify(normalizedBooks)) {
-      writeUserData("ai_books", normalizedBooks);
-    }
+    let mounted = true;
+
+    const syncAiBooks = async () => {
+      const localBooks = normalizeAiBooks(readUserData("ai_books", []));
+      if (mounted) setAiBooks(localBooks);
+
+      try {
+        const res = await getMyBookRecommendations();
+        const apiBooks = mapRecommendedBooksFromApi(res?.payload?.rekomendasi_buku || []);
+        const merged = normalizeAiBooks([...apiBooks, ...localBooks]);
+
+        if (!mounted) return;
+        setAiBooks(merged);
+        writeUserData("ai_books", merged);
+      } catch (err) {
+        if (err?.status !== 404) {
+          console.error("Gagal mengambil rekomendasi buku dari backend:", err);
+        }
+      }
+    };
+
+    syncAiBooks();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const filteredBooks = useMemo(() => {
@@ -121,20 +176,52 @@ const Books = () => {
     setCurrentFilter(newFilter);
   };
 
-  const handleRecordSession = () => {
-    const sessions = getBookSessions();
-    sessions.push({
-      id: Date.now(),
-      date: new Date().toISOString(),
+  const handleRecordSession = async () => {
+    if (!timerRunning || savingSession) return;
+
+    setSavingSession(true);
+    const payload = {
       durationSeconds: elapsedSeconds,
-      exploredBooks: exploredBooksRef.current.map((b) => ({ ...b })),
-    });
-    saveBookSessions(sessions);
-    showAlert(
-      "Waktu sesi eksplorasi tersimpan. Terima kasih sudah meluangkan waktu untuk dirimu.",
-      { type: "success", title: "Sesi tersimpan" },
-    );
-    resetSessionTimer();
+      date: new Date().toISOString(),
+      exploredBooks: exploredBooksRef.current.map((item) => ({ ...item })),
+    };
+
+    try {
+      const res = await createBookSession(payload);
+      const saved = res?.payload?.session;
+      const localSession = {
+        id: saved?.id ?? Date.now(),
+        date: saved?.date || payload.date,
+        durationSeconds: saved?.durationSeconds ?? payload.durationSeconds,
+        exploredBooks: Array.isArray(saved?.exploredBooks) ? saved.exploredBooks : payload.exploredBooks,
+      };
+
+      const sessions = getBookSessions();
+      sessions.push(localSession);
+      saveBookSessions(sessions);
+
+      showAlert(
+        "Waktu sesi eksplorasi tersimpan dan tersinkron ke akun Anda.",
+        { type: "success", title: "Sesi tersimpan" },
+      );
+      resetSessionTimer();
+    } catch {
+      const sessions = getBookSessions();
+      sessions.push({
+        id: Date.now(),
+        date: payload.date,
+        durationSeconds: payload.durationSeconds,
+        exploredBooks: payload.exploredBooks,
+      });
+      saveBookSessions(sessions);
+
+      showAlert(
+        "Sesi tersimpan lokal, tetapi sinkronisasi backend gagal. Coba lagi nanti.",
+        { type: "warning", title: "Sinkronisasi gagal" },
+      );
+    } finally {
+      setSavingSession(false);
+    }
   };
 
   const handleSelectBook = (book) => {
@@ -146,11 +233,22 @@ const Books = () => {
       ];
     }
     setSelectedBook(book);
+
     const booksRead = readUserData("books_read", []);
     if (!booksRead.find((item) => item.bookId === book.id)) {
       booksRead.push({ id: Date.now(), bookId: book.id, date: new Date().toISOString() });
       writeUserData("books_read", booksRead);
     }
+
+    createBookRead({
+      bookId: String(book.id),
+      title: book.title,
+      author: book.author,
+    }).catch((err) => {
+      if (err?.status !== 404) {
+        console.error("Gagal sinkron riwayat buku dibuka:", err);
+      }
+    });
   };
 
   return (
@@ -172,9 +270,7 @@ const Books = () => {
             <div>
               <h1 className="mb-1 text-2xl font-extrabold text-[#1E293B] lg:text-3xl">Rekomendasi Buku</h1>
               <p className="max-w-xl text-sm font-medium text-[#64748B] lg:text-base">
-                Bacaan yang dipersonalisasi untukmu. Timer mencatat lama Anda menjelajahi halaman ini — mulai dari filter
-                atau buku pertama yang Anda buka. Gunakan <span className="font-semibold text-[#1E293B]">Catat sesi</span>{" "}
-                untuk menyimpan durasinya.
+                Bacaan yang dipersonalisasi untukmu. Jelajahi buku rekomendasi sesuai kebutuhanmu.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -185,10 +281,8 @@ const Books = () => {
                 Riwayat eksplorasi
               </Link>
               <BooksSessionTimer
-                elapsedSeconds={elapsedSeconds}
-                timerActive={timerRunning}
                 onRecordSession={handleRecordSession}
-                disabledRecord={!timerRunning}
+                disabledRecord={!timerRunning || savingSession}
               />
             </div>
           </header>

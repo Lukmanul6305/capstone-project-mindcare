@@ -2,20 +2,88 @@ import { useEffect, useMemo, useState } from "react";
 import { FiMenu } from "react-icons/fi";
 
 import ActivityGrid from "../../components/dashboard/ActivityGrid";
-import AppSidebar from "../../components/layout/AppSidebar";
 import MoodChartCard from "../../components/dashboard/MoodChartCard";
 import StatusCards from "../../components/dashboard/StatusCards";
 import WelcomeCard from "../../components/dashboard/WelcomeCard";
-import ExerciseStatsCard from "../../components/dashboard/ExerciseStatsCard";
+import AppSidebar from "../../components/layout/AppSidebar";
+import {
+  apiRequest,
+  getMyBookSessions,
+  getMyKuesioner,
+  getMyOlahraga,
+} from "../../lib/api";
+import { getBookSessions } from "../../lib/mindcareBookSessions";
 import { readAppData } from "../../lib/storage";
-import { apiRequest, getOlahragaStatistikPerJenis } from "../../lib/api";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const moodToEmoji = {
-  happy: "😊",
-  neutral: "😐",
-  sad: "😢",
-  angry: "😠",
-  surprised: "😲",
+  happy: "\uD83D\uDE0A",
+  neutral: "\uD83D\uDE10",
+  sad: "\uD83D\uDE22",
+  angry: "\uD83D\uDE20",
+  surprised: "\uD83D\uDE32",
+};
+
+const moodScoreMap = {
+  0: "angry",
+  1: "sad",
+  2: "neutral",
+  3: "neutral",
+  4: "happy",
+  5: "happy",
+};
+
+const toDate = (value) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const toDayStart = (value) => {
+  const date = toDate(value);
+  if (!date) return null;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const toDateKey = (value) => {
+  const date = toDayStart(value);
+  if (!date) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseDateKey = (dateKey) => {
+  const [year, month, day] = String(dateKey).split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+};
+
+const getWeekStartMonday = (dateValue) => {
+  const date = toDayStart(dateValue) || new Date();
+  const day = date.getDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + offset);
+  return date;
+};
+
+const extractArrayPayload = (payload, expectedKey) => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (expectedKey && Array.isArray(payload[expectedKey])) return payload[expectedKey];
+  return Object.values(payload).filter((item) => item && typeof item === "object");
+};
+
+const normalizeMoodKey = (value) => {
+  if (value == null) return null;
+  if (typeof value === "number") return moodScoreMap[value] || null;
+
+  const numericValue = Number(value);
+  if (Number.isFinite(numericValue)) return moodScoreMap[numericValue] || null;
+
+  const key = String(value).toLowerCase().trim();
+  return moodToEmoji[key] ? key : null;
 };
 
 const Dashboard = () => {
@@ -23,77 +91,182 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     user: readAppData("user", {}),
-    moods: [],
     stressScans: [],
+    kuesioner: [],
     journals: [],
-    exerciseStats: null,
+    olahraga: [],
+    bookSessions: [],
   });
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    let mounted = true;
+
+    const withFallback = async (request) => {
       try {
-        setLoading(true);
-        // Fetch User Profile (to get latest data)
-        const userRes = await apiRequest("/api/auth/me");
-        
-        // Fetch Moods/Stress Scans
-        const scansRes = await apiRequest("/api/stress-scan/me").catch(() => ({ success: true, payload: { scans: [] } }));
-        
-        // Fetch Journals
-        const journalsRes = await apiRequest("/api/journal/me").catch(() => ({ success: true, payload: { journals: [] } }));
-
-        // Fetch Exercise Stats
-        const exerciseStatsRes = await getOlahragaStatistikPerJenis().catch(() => null);
-
-        setDashboardData({
-          user: userRes?.payload?.user || dashboardData.user,
-          moods: scansRes?.payload?.scans || [],
-          stressScans: scansRes?.payload?.scans || [],
-          journals: journalsRes?.payload?.journals || [],
-          exerciseStats: exerciseStatsRes?.payload || null,
-        });
+        return await request;
       } catch (err) {
-        console.error("Failed to fetch dashboard data:", err);
+        if (err?.status !== 404) {
+          console.error("Dashboard endpoint error:", err);
+        }
+        return { success: true, payload: {} };
+      }
+    };
+
+    const fetchDashboardData = async () => {
+      setLoading(true);
+
+      try {
+        const [userRes, scansRes, kuesionerRes, journalsRes, olahragaRes, bookSessionsRes] = await Promise.all([
+          withFallback(apiRequest("/api/auth/me")),
+          withFallback(apiRequest("/api/stress-scan/me")),
+          withFallback(getMyKuesioner()),
+          withFallback(apiRequest("/api/journal/me")),
+          withFallback(getMyOlahraga()),
+          withFallback(getMyBookSessions()),
+        ]);
+
+        if (!mounted) return;
+
+        const remoteBookSessions = extractArrayPayload(bookSessionsRes?.payload, "sessions");
+        const localBookSessions = Array.isArray(getBookSessions()) ? getBookSessions() : [];
+
+        setDashboardData((prev) => ({
+          user: userRes?.payload?.user || prev.user,
+          stressScans: extractArrayPayload(scansRes?.payload, "scans"),
+          kuesioner: extractArrayPayload(kuesionerRes?.payload, "kuesioner"),
+          journals: extractArrayPayload(journalsRes?.payload, "journals"),
+          olahraga: extractArrayPayload(olahragaRes?.payload, "olahraga"),
+          bookSessions: remoteBookSessions.length ? remoteBookSessions : localBookSessions,
+        }));
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     fetchDashboardData();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const moodInfo = useMemo(() => {
-    const today = new Date().toDateString();
-    const todayMood = dashboardData.moods.find((item) => new Date(item.createdAt).toDateString() === today);
-    
-    const moodMapping = { 0: "angry", 1: "sad", 2: "neutral", 3: "neutral", 4: "happy", 5: "happy" };
-    const moodLabel = todayMood ? (typeof todayMood.mood === 'number' ? moodMapping[todayMood.mood] : todayMood.mood) : null;
+    const todayKey = toDateKey(new Date());
+    const todayCandidates = [...dashboardData.stressScans, ...dashboardData.kuesioner]
+      .filter((item) => toDateKey(item?.createdAt || item?.tanggal) === todayKey)
+      .sort((a, b) => new Date(b.createdAt || b.tanggal) - new Date(a.createdAt || a.tanggal));
+
+    const latest = todayCandidates[0] || null;
+    const moodKey = normalizeMoodKey(latest?.mood);
 
     return {
-      hasCheckIn: Boolean(todayMood),
-      moodToday: moodLabel ? moodToEmoji[moodLabel] || "😊" : "--",
+      hasCheckIn: Boolean(latest),
+      moodToday: moodKey ? moodToEmoji[moodKey] : "--",
     };
-  }, [dashboardData.moods]);
+  }, [dashboardData.kuesioner, dashboardData.stressScans]);
 
-  const stressInfo = useMemo(() => {
-    if (!dashboardData.stressScans.length) return { score: "--", trend: "flat" };
-    const scans = [...dashboardData.stressScans].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    const latest = scans[scans.length - 1];
-    
-    const score = latest.tingkat_stres;
-    
-    if (scans.length === 1) return { score, trend: "down" };
-    const prev = scans[scans.length - 2];
-    if (latest.tingkat_stres > prev.tingkat_stres) return { score, trend: "up" };
-    if (latest.tingkat_stres < prev.tingkat_stres) return { score, trend: "down" };
-    return { score, trend: "flat" };
-  }, [dashboardData.stressScans]);
+  const streakInfo = useMemo(() => {
+    const activeDayKeys = new Set();
+    const addActivityDay = (value) => {
+      const key = toDateKey(value);
+      if (key) activeDayKeys.add(key);
+    };
+
+    dashboardData.stressScans.forEach((item) => addActivityDay(item?.createdAt));
+    dashboardData.kuesioner.forEach((item) => addActivityDay(item?.createdAt));
+    dashboardData.journals.forEach((item) => addActivityDay(item?.createdAt));
+    dashboardData.olahraga.forEach((item) => addActivityDay(item?.tanggal || item?.createdAt));
+    dashboardData.bookSessions.forEach((item) => addActivityDay(item?.date));
+
+    const today = toDayStart(new Date()) || new Date();
+    let current = 0;
+    const cursor = new Date(today);
+    while (activeDayKeys.has(toDateKey(cursor))) {
+      current += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    const sortedDays = [...activeDayKeys].sort();
+    let longest = 0;
+    let run = 0;
+    let prevDay = null;
+    sortedDays.forEach((dayKey) => {
+      const day = parseDateKey(dayKey);
+      if (!day) return;
+
+      if (prevDay && (day - prevDay) / DAY_MS === 1) {
+        run += 1;
+      } else {
+        run = 1;
+      }
+
+      longest = Math.max(longest, run);
+      prevDay = day;
+    });
+
+    const weekStart = getWeekStartMonday(new Date());
+    const weekItems = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + index);
+      const dateKey = toDateKey(date);
+
+      return {
+        date,
+        dateKey,
+        active: activeDayKeys.has(dateKey),
+        fullDateLabel: date.toLocaleDateString("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        }),
+      };
+    });
+
+    return {
+      current,
+      longest,
+      weekItems,
+    };
+  }, [dashboardData.bookSessions, dashboardData.journals, dashboardData.kuesioner, dashboardData.olahraga, dashboardData.stressScans]);
+
+  const moodRows = useMemo(() => {
+    const byDay = new Map();
+    const registerMood = (entries) => {
+      entries.forEach((item) => {
+        const timestamp = toDate(item?.createdAt || item?.tanggal);
+        const dayKey = toDateKey(timestamp);
+        const moodKey = normalizeMoodKey(item?.mood);
+        if (!timestamp || !dayKey || !moodKey) return;
+
+        const prev = byDay.get(dayKey);
+        if (!prev || timestamp > prev.timestamp) {
+          byDay.set(dayKey, { moodKey, timestamp });
+        }
+      });
+    };
+
+    registerMood(dashboardData.stressScans);
+    registerMood(dashboardData.kuesioner);
+
+    const today = toDayStart(new Date()) || new Date();
+    return Array.from({ length: 7 }, (_, offset) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (6 - offset));
+      const dateKey = toDateKey(date);
+      const found = byDay.get(dateKey);
+
+      return {
+        dateKey,
+        dayLabel: date.toLocaleDateString("id-ID", { weekday: "short" }),
+        moodKey: found?.moodKey ?? null,
+      };
+    });
+  }, [dashboardData.kuesioner, dashboardData.stressScans]);
 
   if (loading) {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-[#F4F5F9]">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#8B5CF6] border-t-transparent"></div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#F4F5F9]">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#8B5CF6] border-t-transparent" />
+      </div>
     );
   }
 
@@ -113,18 +286,14 @@ const Dashboard = () => {
           </div>
 
           <div className="mx-auto max-w-5xl space-y-8 p-6 lg:p-10">
-            <WelcomeCard userName={dashboardData.user.name} />
+            <WelcomeCard userName={dashboardData.user?.name} />
             <StatusCards
-              stressScore={stressInfo.score}
-              stressTrend={stressInfo.trend}
+              streakInfo={streakInfo}
               moodToday={moodInfo.moodToday}
               hasCheckIn={moodInfo.hasCheckIn}
             />
             <ActivityGrid />
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              <MoodChartCard moods={dashboardData.moods} />
-              <ExerciseStatsCard stats={dashboardData.exerciseStats} />
-            </div>
+            <MoodChartCard moodRows={moodRows} />
           </div>
         </main>
       </div>

@@ -1,16 +1,5 @@
 import { FiBook, FiClock } from "react-icons/fi";
 
-const formatDurationLabel = (sec) => {
-  if (sec == null || Number.isNaN(sec)) return "—";
-  const s = Math.max(0, Math.floor(sec));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const rs = s % 60;
-  if (h > 0) return `${h} jam ${m} m`;
-  if (m > 0) return `${m} m ${rs} dtk`;
-  return `${rs} dtk`;
-};
-
 const BooksSessionHistory = ({ sessions }) => {
   if (!sessions.length) {
     return (
@@ -46,10 +35,6 @@ const BooksSessionHistory = ({ sessions }) => {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
-                </p>
-                <p className="mt-2 text-xs font-semibold text-[#64748B]">
-                  Durasi eksplorasi:{" "}
-                  <span className="font-bold text-[#1E293B]">{formatDurationLabel(session.durationSeconds)}</span>
                 </p>
               </div>
             </div>

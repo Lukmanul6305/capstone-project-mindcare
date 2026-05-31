@@ -1,17 +1,45 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiArrowLeft, FiMenu } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
 import BooksSessionHistory from "../../components/books/BooksSessionHistory";
 import AppSidebar from "../../components/layout/AppSidebar";
-import { getBookSessions } from "../../lib/mindcareBookSessions";
+import { getMyBookSessions } from "../../lib/api";
+import { getBookSessions, saveBookSessions } from "../../lib/mindcareBookSessions";
+
+const sortSessionsDesc = (sessions = []) => (
+  [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date))
+);
 
 const BooksExplorationHistory = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sessions, setSessions] = useState(() => sortSessionsDesc(getBookSessions()));
 
-  const sessions = getBookSessions()
-    .slice()
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchSessions = async () => {
+      try {
+        const res = await getMyBookSessions();
+        const remote = Array.isArray(res?.payload?.sessions) ? res.payload.sessions : [];
+        if (!mounted) return;
+
+        if (remote.length) {
+          setSessions(sortSessionsDesc(remote));
+          saveBookSessions(remote);
+        }
+      } catch (err) {
+        if (err?.status !== 404) {
+          console.error("Gagal mengambil riwayat sesi buku dari backend:", err);
+        }
+      }
+    };
+
+    fetchSessions();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F4F5F9] text-[#1E293B]">
@@ -38,7 +66,7 @@ const BooksExplorationHistory = () => {
           <header className="hidden items-center justify-between gap-6 px-8 pt-10 pb-6 lg:flex">
             <div>
               <h1 className="mb-1 text-3xl font-extrabold text-[#1E293B]">Riwayat eksplorasi buku</h1>
-              <p className="font-medium text-[#64748B]">Waktu, durasi, dan buku rekomendasi yang pernah Anda buka dalam satu sesi.</p>
+              <p className="font-medium text-[#64748B]">Waktu dan buku rekomendasi yang pernah Anda buka dalam satu sesi.</p>
             </div>
             <Link
               to="/books"
@@ -50,7 +78,7 @@ const BooksExplorationHistory = () => {
 
           <div className="px-8 pb-2 pt-2 lg:hidden">
             <h1 className="mb-1 text-2xl font-extrabold text-[#1E293B]">Riwayat eksplorasi</h1>
-            <p className="text-sm font-medium text-[#64748B]">Waktu, durasi, dan buku yang dibuka per sesi.</p>
+            <p className="text-sm font-medium text-[#64748B]">Waktu dan buku yang dibuka per sesi.</p>
           </div>
 
           <div className="mx-auto max-w-6xl p-8 pt-4 lg:p-12 lg:pt-2">

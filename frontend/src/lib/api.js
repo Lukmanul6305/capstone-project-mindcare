@@ -135,6 +135,60 @@ export async function getAllStressScans() {
 }
 
 /**
+ * GET /api/kuesioner/me
+ * Ambil riwayat kuesioner milik user
+ */
+export async function getMyKuesioner() {
+  return apiRequest("/api/kuesioner/me");
+}
+
+/**
+ * GET /api/kuesioner/rekomendasi
+ * Ambil riwayat rekomendasi (termasuk riwayat buku) milik user
+ */
+export async function getMyBookRecommendations() {
+  return apiRequest("/api/kuesioner/rekomendasi");
+}
+
+/**
+ * POST /api/books/sessions
+ * Simpan sesi eksplorasi buku
+ */
+export async function createBookSession(data) {
+  return apiRequest("/api/books/sessions", {
+    method: "POST",
+    body: data,
+  });
+}
+
+/**
+ * GET /api/books/sessions/me
+ * Ambil riwayat sesi eksplorasi buku milik user
+ */
+export async function getMyBookSessions() {
+  return apiRequest("/api/books/sessions/me");
+}
+
+/**
+ * POST /api/books/reads
+ * Simpan riwayat buku yang dibuka user
+ */
+export async function createBookRead(data) {
+  return apiRequest("/api/books/reads", {
+    method: "POST",
+    body: data,
+  });
+}
+
+/**
+ * GET /api/books/reads/me
+ * Ambil riwayat buku yang dibuka user
+ */
+export async function getMyBookReads() {
+  return apiRequest("/api/books/reads/me");
+}
+
+/**
  * Olahraga (Exercise) API
  */
 
