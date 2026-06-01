@@ -15,21 +15,24 @@ const app = express();
 const PORT = process.env.PORT || 9000;
 const HOST = process.env.HOST || "localhost";
 
-async function init() {
-    app.use(cors({
-        credentials: true,
-        origin: function (origin, callback) {
-            const allowed = [
-                /^https:\/\/capstone-project-mindcare[\w-]*\.vercel\.app$/,
-                /^http:\/\/localhost:\d+$/,
-            ];
-            if (!origin || allowed.some(pattern => pattern.test(origin))) {
-                callback(null, true);
-            } else {
-                callback(new Error('Not allowed by CORS'));
-            }
+const corsOptions = {
+    credentials: true,
+    origin: function (origin, callback) {
+        const allowed = [
+            /^https:\/\/capstone-project-mindcare[\w-]*\.vercel\.app$/,
+            /^http:\/\/localhost:\d+$/,
+        ];
+        if (!origin || allowed.some(pattern => pattern.test(origin))) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
         }
-    }));
+    }
+};
+
+async function init() {
+    app.use(cors(corsOptions));
+    app.options('*', cors(corsOptions));
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(cookieParser());
@@ -38,15 +41,11 @@ async function init() {
     try {
         await db.authenticate();
         console.log("Database connected ");
-        app.get("/", (req, res) => {
-            res.status(200).json({
-                message: "Server is running",
-                data: null,
-            });
-        });
+
         app.get("/", (req, res) => {
             response.success(res, 200, "Server siap.");
-        })
+        });
+
         app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
         app.use("/api", router);
         app.use(errorHandler);
