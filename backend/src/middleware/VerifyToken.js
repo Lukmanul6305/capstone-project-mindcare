@@ -7,14 +7,12 @@ const verifyToken = (req, res, next) => {
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return response.failed(res, 401, "Akses ditolak. Token tidak ditemukan.");
     }
-
     const token = authHeader.split(" ")[1];
-
     try {
         const decoded = jwtUtils.verifyAccessToken(token);
         req.userId = decoded.userId;
-        req.name   = decoded.name;
-        req.email  = decoded.email;
+        req.name = decoded.name;
+        req.email = decoded.email;
         req.role = decoded.role;
         next();
     } catch (error) {
