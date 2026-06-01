@@ -16,18 +16,33 @@ function setAccessToken(accessToken) {
   writeAppData("auth", { ...prev, accessToken });
 }
 
+let refreshPromise = null;
+
 async function tryRefreshAccessToken() {
-  const res = await fetch(`${getApiBaseUrl()}/api/auth/token`, {
-    method: "GET",
-    credentials: "include",
-  });
+  if (refreshPromise) return refreshPromise;
 
-  const json = await res.json().catch(() => null);
-  if (!res.ok || !json?.success) return null;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/token`, {
+        method: "GET",
+        credentials: "include",
+      });
 
-  const accessToken = json?.payload?.accessToken ?? null;
-  if (accessToken) setAccessToken(accessToken);
-  return accessToken;
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) return null;
+
+      const accessToken = json?.payload?.accessToken ?? null;
+      if (accessToken) setAccessToken(accessToken);
+      return accessToken;
+    } catch (err) {
+      console.error("Refresh token error:", err);
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 export async function apiRequest(path, options = {}) {
@@ -63,15 +78,11 @@ export async function apiRequest(path, options = {}) {
 
   const json = await res.json().catch(() => null);
 
-  // Hanya retry jika pesan error mengandung "kedaluwarsa"
-  if (
-    res.status === 401 &&
-    retryOnAuthFail &&
-    auth &&
-    json?.msg?.toLowerCase?.().includes("kedaluwarsa")
-  ) {
+  // Jika unauthorized dan belum pernah retry, coba refresh token
+  if (res.status === 401 && retryOnAuthFail && auth) {
     const newToken = await tryRefreshAccessToken();
     if (newToken) {
+      // Retry dengan token baru
       return apiRequest(path, { ...options, retryOnAuthFail: false });
     }
   }
