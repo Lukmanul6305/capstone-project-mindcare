@@ -86,6 +86,7 @@ const Checkin = () => {
   const streamRef = useRef(null);
   const detectTimerRef = useRef(null);
   const countdownRef = useRef(null);
+  const retakingRef = useRef(false);
 
   // ─── Cek apakah hari ini sudah check-in (ambil dari backend) ─────────────
   useEffect(() => {
@@ -225,14 +226,32 @@ const Checkin = () => {
   };
 
   // ─── Retake foto ─────────────────────────────────────────────────────────
+  // Tandai bahwa kita sedang retake; useEffect di bawah akan mulai kamera
+  // setelah React selesai me-render panel "camera" (videoRef tersedia).
   const retakePhoto = () => {
+    clearTimers();
+    stopCamera();
     setCapturedImage(null);
     setCameraStarted(false);
     setFaceDetected(false);
     setCaptureDisabled(true);
     setAutoCaptureMessage("");
-    startCamera();
+    retakingRef.current = true;
+    setPanel("camera");
   };
+
+  // ─── Mulai kamera otomatis setelah retake (tunggu render selesai) ─────────
+  useEffect(() => {
+    if (panel === "camera" && retakingRef.current) {
+      retakingRef.current = false;
+      // Beri satu frame agar videoRef.current sudah ada di DOM
+      const raf = requestAnimationFrame(() => {
+        startCamera();
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panel]);
 
   // ─── Helper: ambil payload dari berbagai struktur response ────────────────
   const getPredictionPayload = (response) => {

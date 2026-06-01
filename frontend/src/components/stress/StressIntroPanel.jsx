@@ -1,4 +1,4 @@
-import { FiClock, FiList, FiLock, FiPlay } from "react-icons/fi";
+import { FiList, FiLock, FiPlay } from "react-icons/fi";
 
 const StressIntroPanel = ({ onStart }) => {
   return (
@@ -13,9 +13,6 @@ const StressIntroPanel = ({ onStart }) => {
       </p>
 
       <div className="mb-8 flex flex-wrap justify-center gap-4 text-sm">
-        <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-[#F8FAFC] px-5 py-2 font-bold">
-          <FiClock size={16} className="text-[#9333EA]" /> ±3 menit
-        </div>
         <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-[#F8FAFC] px-5 py-2 font-bold">
           <FiList size={16} className="text-[#9333EA]" /> 10 pertanyaan
         </div>

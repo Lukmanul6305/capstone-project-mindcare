@@ -32,7 +32,7 @@ const mapAnswersToKuesionerPayload = (answers) => {
   const durasi_stres = Number(answers[1]) || 14;
   const penyebab_stres = stressQuestions[2].opts[answers[2]] ?? "akademik";
   const kualitas_tidur = parseInt(stressQuestions[3].opts[answers[3]], 10) || 3;
-  const waktu_luang = Number(answers[4]) || 90;
+  const waktu_luang = Math.round((Number(answers[4]) || 1.5) * 60);
   const mood = parseInt(stressQuestions[5].opts[answers[5]], 10) || 2;
   const aktivitas_fisik = stressQuestions[6].opts[answers[6]] ?? "jarang";
   const preferensi_olahraga = stressQuestions[7].opts[answers[7]] ?? "tidak";
