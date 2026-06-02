@@ -1,4 +1,9 @@
 import swaggerJsdoc from "swagger-jsdoc";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const options = {
     definition: {
@@ -10,7 +15,6 @@ const options = {
         },
         servers: [
             {
-                // url: `${process.env.API_BASE_URL}/api` || "http://localhost:3000/api",
                 url: "http://localhost:3000/api",
                 description: "API Server"
             },
@@ -30,7 +34,7 @@ const options = {
         },
         security: [{ bearerAuth: [] }]
     },
-    apis: ["./src/docs/*.yaml"],
+    apis: [path.resolve(__dirname, "../docs/*.yaml")], // ← path absolut
 };
 
 export default swaggerJsdoc(options);
