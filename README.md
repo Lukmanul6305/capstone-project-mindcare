@@ -102,79 +102,108 @@ Authorization: Bearer <accessToken>
 
 ---
 
-## 📌 Daftar Endpoint Inti|
+## 📌 Daftar Endpoint API
 
 ### 🔑 Authentication
 
-| Method | Endpoint           | Deskripsi                               |
-| ------ | ------------------ | --------------------------------------- |
-| POST   | `/api/auth/login`  | Login pengguna                          |
-| GET    | `/api/auth/token`  | Refresh access token                    |
-| DELETE | `/api/auth/logout` | Logout pengguna                         |
-| GET    | `/api/auth/me`     | Mendapatkan data user yang sedang login |
+| Method | Endpoint              | Deskripsi            |
+| ------ | --------------------- | -------------------- |
+| POST   | `/api/users/register` | Register user baru   |
+| POST   | `/api/auth/login`     | Login user           |
+| GET    | `/api/auth/token`     | Refresh Access Token |
+| DELETE | `/api/auth/logout`    | Logout user          |
 
 ---
 
-### 👤 Users
+### 👤 Profile
 
-| Method | Endpoint              | Deskripsi                |
-| ------ | --------------------- | ------------------------ |
-| POST   | `/api/users/register` | Registrasi pengguna baru |
-| PUT    | `/api/users/me`       | Mengubah profil pengguna |
-| DELETE | `/api/users/me`       | Menghapus akun pengguna  |
+| Method | Endpoint        | Deskripsi                           |
+| ------ | --------------- | ----------------------------------- |
+| GET    | `/api/auth/me`  | Ambil profil user yang sedang login |
+| PUT    | `/api/users/me` | Update profil user                  |
+| DELETE | `/api/users/me` | Hapus akun sendiri                  |
+
+---
+
+### 👥 Users (Admin Only)
+
+| Method | Endpoint              | Deskripsi                        |
+| ------ | --------------------- | -------------------------------- |
+| GET    | `/api/auth/users`     | Ambil semua data user            |
+| GET    | `/api/auth/users/:id` | Ambil detail user berdasarkan ID |
+| DELETE | `/api/auth/users/:id` | Hapus user berdasarkan ID        |
 
 ---
 
 ### 📔 Journal
 
-| Method | Endpoint           | Deskripsi                         |
-| ------ | ------------------ | --------------------------------- |
-| POST   | `/api/journal`     | Membuat jurnal baru               |
-| GET    | `/api/journal/me`  | Mengambil seluruh jurnal pengguna |
-| PUT    | `/api/journal/:id` | Mengubah jurnal berdasarkan ID    |
-| DELETE | `/api/journal/:id` | Menghapus jurnal berdasarkan ID   |
+| Method | Endpoint           | Deskripsi                                       |
+| ------ | ------------------ | ----------------------------------------------- |
+| GET    | `/api/journal`     | Ambil semua jurnal (Admin Only)                 |
+| POST   | `/api/journal`     | Buat entri jurnal baru                          |
+| GET    | `/api/journal/me`  | Ambil semua jurnal milik user login             |
+| GET    | `/api/journal/:id` | Ambil detail jurnal berdasarkan ID (Admin Only) |
+| PUT    | `/api/journal/:id` | Update jurnal milik user                        |
+| DELETE | `/api/journal/:id` | Hapus jurnal milik user                         |
 
 ---
 
 ### 📋 Kuesioner & Rekomendasi
 
-| Method | Endpoint                             | Deskripsi                                |
-| ------ | ------------------------------------ | ---------------------------------------- |
-| POST   | `/api/kuesioner`                     | Mengirim hasil kuesioner stres           |
-| GET    | `/api/kuesioner/rekomendasi`         | Mendapatkan rekomendasi terbaru          |
-| GET    | `/api/kuesioner/rekomendasi/:sesiId` | Mendapatkan rekomendasi berdasarkan sesi |
+| Method | Endpoint                             | Deskripsi                                                   |
+| ------ | ------------------------------------ | ----------------------------------------------------------- |
+| POST   | `/api/kuesioner`                     | Simpan kuesioner, panggil AI, lalu simpan hasil rekomendasi |
+| GET    | `/api/kuesioner/me`                  | Ambil semua data kuesioner milik user login                 |
+| GET    | `/api/kuesioner/rekomendasi`         | Ambil riwayat rekomendasi tersimpan                         |
+| GET    | `/api/kuesioner/rekomendasi/:sesiId` | Ambil detail rekomendasi berdasarkan sesi ID                |
+| DELETE | `/api/kuesioner/:id`                 | Hapus kuesioner berdasarkan ID                              |
+| GET    | `/api/kuesioner/all`                 | Ambil semua data kuesioner (Admin Only)                     |
+| GET    | `/api/kuesioner/all/:id`             | Ambil detail kuesioner berdasarkan ID (Admin Only)          |
 
 ---
 
 ### 🏃 Olahraga
 
-| Method | Endpoint                            | Deskripsi                            |
-| ------ | ----------------------------------- | ------------------------------------ |
-| POST   | `/api/olahraga`                     | Menambahkan aktivitas olahraga       |
-| GET    | `/api/olahraga/me`                  | Mengambil riwayat olahraga pengguna  |
-| GET    | `/api/olahraga/statistik`           | Menampilkan statistik olahraga       |
-| GET    | `/api/olahraga/statistik-per-jenis` | Statistik olahraga berdasarkan jenis |
+| Method | Endpoint                            | Deskripsi                                 |
+| ------ | ----------------------------------- | ----------------------------------------- |
+| GET    | `/api/olahraga`                     | Ambil semua log olahraga (Admin Only)     |
+| POST   | `/api/olahraga`                     | Simpan log olahraga baru                  |
+| GET    | `/api/olahraga/me`                  | Ambil semua log olahraga milik user login |
+| GET    | `/api/olahraga/statistik`           | Ambil statistik total durasi dan kalori   |
+| GET    | `/api/olahraga/statistik-per-jenis` | Ambil statistik durasi per jenis olahraga |
+| GET    | `/api/olahraga/:id`                 | Ambil detail log olahraga berdasarkan ID  |
+| DELETE | `/api/olahraga/:id`                 | Hapus log olahraga berdasarkan ID         |
 
 ---
 
 ### 🧠 Stress Scan
 
-| Method | Endpoint              | Deskripsi                              |
-| ------ | --------------------- | -------------------------------------- |
-| POST   | `/api/stress-scan`    | Mengirim hasil stress scan             |
-| GET    | `/api/stress-scan/me` | Mengambil riwayat stress scan pengguna |
+| Method | Endpoint               | Deskripsi                                       |
+| ------ | ---------------------- | ----------------------------------------------- |
+| POST   | `/api/stress-scan`     | Kirim gambar ke AI Flask lalu simpan hasil scan |
+| GET    | `/api/stress-scan`     | Ambil semua stress scan (Admin Only)            |
+| GET    | `/api/stress-scan/me`  | Ambil riwayat stress scan milik user login      |
+| GET    | `/api/stress-scan/:id` | Ambil detail stress scan berdasarkan ID         |
+| DELETE | `/api/stress-scan/:id` | Hapus stress scan berdasarkan ID                |
 
 ---
 
 ### 📚 Books
 
-| Method | Endpoint                             | Deskripsi                                     |
-| ------ | ------------------------------------ | --------------------------------------------- |
-| GET    | `/api/books/recommendations`         | Mendapatkan rekomendasi buku terbaru          |
-| GET    | `/api/books/recommendations/:sesiId` | Mendapatkan rekomendasi buku berdasarkan sesi |
-| POST   | `/api/books/reads`                   | Menandai buku sebagai telah dibaca            |
-| GET    | `/api/books/reads`                   | Mengambil daftar buku yang telah dibaca       |
-| DELETE | `/api/books/reads/:bookExternalId`   | Menghapus riwayat buku yang telah dibaca      |
+| Method | Endpoint                 | Deskripsi                                 |
+| ------ | ------------------------ | ----------------------------------------- |
+| POST   | `/api/books/sessions`    | Simpan sesi membaca buku baru             |
+| GET    | `/api/books/sessions/me` | Ambil semua sesi membaca milik user login |
+| POST   | `/api/books/reads`       | Tandai buku sebagai sudah dibaca          |
+| GET    | `/api/books/reads/me`    | Ambil semua riwayat buku yang dibaca      |
+
+---
+
+### 🗺️ Match Route
+
+| Method | Endpoint           | Deskripsi                              |
+| ------ | ------------------ | -------------------------------------- |
+| POST   | `/api/match-route` | Mencocokkan rute berdasarkan koordinat |
 
 ---
 
@@ -196,7 +225,5 @@ Authorization: Bearer <accessToken>
 
 ```http
 GET /api/auth/me
-Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+Authorization: Bearer <access_token>
 ```
-
------
