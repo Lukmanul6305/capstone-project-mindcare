@@ -10,9 +10,9 @@ Berikut dataset yang digunakan dalam proyek ini. Unduh terlebih dahulu sebelum m
 
 | Dataset | Deskripsi | Link |
 |---|---|---|
-| **Dataset Sudah Bersih** | Dataset wajah yang telah melalui proses preprocessing & pembersihan | [Download](https://drive.google.com/file/d/1aLeez6zwONppBFM3V33IMAMH-ezTFLhe/view?usp=drive_link) |
-| **Dataset Balance (Training)** | Dataset yang telah di-balance untuk proses training | [Download](https://drive.google.com/file/d/1x1E3PLWNW_JDquo7YIf3wMXB3mt7X5f5/view?usp=drive_link) |
-| **Dataset Model Face Recognition** | Dataset siap pakai untuk melatih model face recognition | [Download](https://drive.google.com/file/d/1eIM3JFRKkD-3lWiHueadDmUe4J4CpKRW/view?usp=drive_link) |
+| **Dataset Sudah Bersih** | Dataset wajah yang telah melalui proses preprocessing & pembersihan | [Download](https://drive.google.com/file/d/1MWI5o5Kf-hq8N8GW-2pU10ARZ-i2ty3T/view?usp=drive_link) |
+| **Dataset Balance (Training)** | Dataset yang telah di-balance untuk proses training | [Download](https://drive.google.com/file/d/1kZMkxDfx2ZrcRoflHNkOz5yQFbXcq_SP/view?usp=drive_link) |
+| **Dataset Model Face Recognition** | Dataset siap pakai untuk melatih model face recognition | [Download](https://drive.google.com/file/d/1YxwXGkVx9xpw-dmLlfqfIjBlha3IM0it/view?usp=drive_link) |
 
 > ⚠️ **Pastikan** kamu sudah login ke akun Google dan memiliki akses ke file tersebut sebelum mengunduh.
 
