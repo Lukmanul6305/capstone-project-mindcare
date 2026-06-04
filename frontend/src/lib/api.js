@@ -16,15 +16,26 @@ function setAccessToken(accessToken) {
   writeAppData("auth", { ...prev, accessToken });
 }
 
+function redirectToLogin() {
+  if (typeof window === "undefined") return;
+  if (window.location.pathname !== "/") {
+    window.location.replace("/");
+  }
+}
+
 let refreshPromise = null;
 
-async function tryRefreshAccessToken() {
-  if (refreshPromise) return refreshPromise;
+export async function refreshAccessToken({ clearOnFail = true } = {}) {
+  if (refreshPromise) {
+    const token = await refreshPromise;
+    if (!token && clearOnFail) clearAuth();
+    return token;
+  }
 
   refreshPromise = (async () => {
     try {
       const res = await fetch(`${getApiBaseUrl()}/api/auth/token`, {
-        method: "GET",
+        method: "POST",
         credentials: "include",
       });
 
@@ -42,7 +53,9 @@ async function tryRefreshAccessToken() {
     }
   })();
 
-  return refreshPromise;
+  const token = await refreshPromise;
+  if (!token && clearOnFail) clearAuth();
+  return token;
 }
 
 export async function apiRequest(path, options = {}) {
@@ -80,11 +93,12 @@ export async function apiRequest(path, options = {}) {
 
   // Jika unauthorized dan belum pernah retry, coba refresh token
   if (res.status === 401 && retryOnAuthFail && auth) {
-    const newToken = await tryRefreshAccessToken();
+    const newToken = await refreshAccessToken();
     if (newToken) {
       // Retry dengan token baru
       return apiRequest(path, { ...options, retryOnAuthFail: false });
     }
+    redirectToLogin();
   }
 
   if (!res.ok) {

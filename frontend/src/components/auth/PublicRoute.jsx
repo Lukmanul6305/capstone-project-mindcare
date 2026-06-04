@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { refreshAccessToken } from "../../lib/api";
 import { readAppData } from "../../lib/storage";
 
 const PublicRoute = ({ children }) => {
@@ -7,12 +8,31 @@ const PublicRoute = ({ children }) => {
   const [isAllowed, setIsAllowed] = useState(false);
 
   useEffect(() => {
-    const auth = readAppData("auth", null);
-    if (auth?.accessToken) {
-      navigate("/dashboard", { replace: true });
-    } else {
+    let isMounted = true;
+
+    const checkSession = async () => {
+      const auth = readAppData("auth", null);
+      if (auth?.accessToken) {
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+
+      const accessToken = await refreshAccessToken({ clearOnFail: false });
+      if (!isMounted) return;
+
+      if (accessToken) {
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+
       setIsAllowed(true);
-    }
+    };
+
+    checkSession();
+
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
 
   if (!isAllowed) return null;

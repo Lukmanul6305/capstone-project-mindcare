@@ -7,6 +7,7 @@ paths:
     post:
       tags: [Auth]
       summary: Register user baru
+      security: []
       requestBody:
         required: true
         content:
@@ -44,6 +45,7 @@ paths:
     post:
       tags: [Auth]
       summary: Login user
+      security: []
       requestBody:
         required: true
         content:
@@ -71,10 +73,11 @@ paths:
         "401":
           description: Email atau password salah
   /auth/token:
-    get:
+    post:
       tags: [Auth]
       summary: Refresh Access Token
-      description: Mendapatkan access token baru menggunakan refresh token dari cookie
+      security: []
+      description: Mendapatkan access token baru dan merotasi refresh token menggunakan refresh token dari cookie
       responses:
         "200":
           description: Berhasil
@@ -91,10 +94,7 @@ paths:
     delete:
       tags: [Auth]
       summary: Logout user
-      security:
-        - bearerAuth: []
+      security: []
       responses:
         "200":
           description: Logout berhasil
-        "401":
-          description: Unauthorized

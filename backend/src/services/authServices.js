@@ -36,12 +36,17 @@ const authService = {
         }
 
         const payload = { userId: auth.userId, name: auth.name, email: auth.email, role: auth.role };
-        return jwtUtils.generateAccessToken(payload);
+        const accessToken = jwtUtils.generateAccessToken(payload);
+        const refreshToken = jwtUtils.generateRefreshToken(payload);
+
+        await authRepository.updateRefreshTokenById(auth.id, refreshToken);
+
+        return { accessToken, refreshToken };
     },
 
     async logout(token) {
         const auth = await authRepository.findAuthByToken(token);
-        if (!auth) throw new NotFoundError("Sesi tidak ditemukan.");
+        if (!auth) return;
         await authRepository.deleteAuthById(auth.id);
     },
 

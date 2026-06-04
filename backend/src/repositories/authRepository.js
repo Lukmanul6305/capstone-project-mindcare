@@ -1,5 +1,22 @@
 import db from "../config/Database.js";
 import { QueryTypes } from "sequelize";
+import { createHash } from "node:crypto";
+
+const hashRefreshToken = (token) => {
+    return `sha256:${createHash("sha256").update(token).digest("hex")}`;
+};
+
+const findAuthByStoredToken = async (storedToken) => {
+    const [auth] = await db.query(
+        `SELECT tb_authentications.id, tb_users.id as userId,
+         tb_users.name, tb_users.email, tb_users.role
+         FROM tb_authentications
+         JOIN tb_users ON tb_authentications.user_id = tb_users.id
+         WHERE tb_authentications.token = ? LIMIT 1`,
+        { replacements: [storedToken], type: QueryTypes.SELECT }
+    );
+    return auth;
+};
 
 const authRepository = {
     async findUserByEmail(email) {
@@ -41,20 +58,19 @@ const authRepository = {
 
         await db.query(
             "INSERT INTO tb_authentications (user_id, token) VALUES (?, ?)",
-            { replacements: [userId, token], type: QueryTypes.INSERT }
+            { replacements: [userId, hashRefreshToken(token)], type: QueryTypes.INSERT }
         );
     },
 
     async findAuthByToken(token) {
-        const [auth] = await db.query(
-            `SELECT tb_authentications.id, tb_users.id as userId, 
-             tb_users.name, tb_users.email, tb_users.role 
-             FROM tb_authentications 
-             JOIN tb_users ON tb_authentications.user_id = tb_users.id 
-             WHERE tb_authentications.token = ? LIMIT 1`,
-            { replacements: [token], type: QueryTypes.SELECT }
+        return await findAuthByStoredToken(hashRefreshToken(token)) || await findAuthByStoredToken(token);
+    },
+
+    async updateRefreshTokenById(id, token) {
+        await db.query(
+            "UPDATE tb_authentications SET token = ?, createdAt = CURRENT_TIMESTAMP WHERE id = ?",
+            { replacements: [hashRefreshToken(token), id], type: QueryTypes.UPDATE }
         );
-        return auth;
     },
 
     async deleteAuthById(id) {

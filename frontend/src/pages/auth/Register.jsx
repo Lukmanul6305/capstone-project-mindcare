@@ -168,7 +168,6 @@ const Register = () => {
           <RegisterNavigation
             currentStep={currentStep}
             totalSteps={totalSteps}
-            isQuizLastQuestion={false}
             onBack={handleBack}
             onNext={handleNext}
             loading={loading}

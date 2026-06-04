@@ -10,7 +10,8 @@ const authRoute = Router();
 //endpoint for public
 authRoute.post("/login", validate(loginSchema), authController.Login);
 authRoute.get("/token", authController.RefreshToken);
-authRoute.delete('/logout', verifyToken, authController.Logout);
+authRoute.post("/token", authController.RefreshToken);
+authRoute.delete('/logout', authController.Logout);
 
 //endpoint for login user
 authRoute.get("/me", verifyToken, authController.getUserByToken);

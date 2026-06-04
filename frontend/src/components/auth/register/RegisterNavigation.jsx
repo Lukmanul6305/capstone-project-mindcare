@@ -3,7 +3,6 @@ import { FiArrowLeft, FiArrowRight, FiHome } from "react-icons/fi";
 const RegisterNavigation = ({
   currentStep,
   totalSteps,
-  isQuizLastQuestion,
   onBack,
   onNext,
 }) => {
