@@ -1,10 +1,11 @@
 # MindCare Backend + AI Integration
 
-Folder ini sudah digabungkan dengan dua model AI:
+Folder ini memakai dua sumber AI:
 
-- `model/recommendation` untuk rekomendasi aktivitas dari hasil kuesioner.
-- `model/face/best_model.keras` untuk prediksi mood/emosi dari gambar wajah.
-- `model/ai-service/app.py` sebagai server Flask yang menjalankan endpoint AI.
+- Railway AI service untuk rekomendasi aktivitas dari hasil kuesioner.
+- `model/face/facial_expression_model.keras` untuk prediksi mood/emosi dari gambar wajah.
+- `model/ai-service/app.py` sebagai server Flask lokal untuk endpoint prediksi wajah.
+- `src/data/mindcare_books_dataset.csv` untuk fallback rekomendasi buku.
 
 ## 1. Jalankan database
 
@@ -18,16 +19,13 @@ Pastikan `.env` backend sesuai:
 
 ```env
 PORT=3000
-DB_HOST=localhost
-DB_NAME=project_mindcare
-DB_USER=root
-DB_PASSWORD=
+DATABASE_URL=mysql://user:password@host:3306/project_mindcare
 ALLOWED_ORIGINS=http://localhost:5173
-AI_URL=http://localhost:5000/predict
+AI_URL=https://web-production-1a18e.up.railway.app/predict
 FACE_AI_URL=http://localhost:5000/predict-face
 ```
 
-## 2. Jalankan AI service Python
+## 2. Jalankan AI service Python untuk prediksi wajah
 
 ```bash
 cd backend/model/ai-service
@@ -89,7 +87,7 @@ Saat endpoint ini dipanggil, backend akan:
 
 1. Menyimpan jawaban kuesioner ke database.
 2. Membentuk input AI lewat `src/helper/aiInputBuilder.js`.
-3. Mengirim data ke `AI_URL=http://localhost:5000/predict`.
+3. Mengirim data ke `AI_URL=https://web-production-1a18e.up.railway.app/predict`.
 4. Menyimpan hasil rekomendasi aktivitas, alternatif, distribusi probabilitas, dan buku ke database.
 5. Mengambil ulang data rekomendasi dari database untuk dikirim sebagai response.
 
@@ -142,6 +140,7 @@ FACE_LABELS=label1,label2,label3,label4 python app.py
 
 ## Catatan penting
 
-- Model rekomendasi sudah cocok dengan format input yang dibuat backend.
+- Model rekomendasi lokal sudah diganti oleh endpoint Railway.
+- Backend menormalisasi response Railway agar tetap cocok dengan format `rekomendasi_utama`, `alternatif`, dan `insight` yang dipakai frontend.
 - File backend `.env` masih berisi secret/token contoh dari ZIP asli. Untuk produksi, ganti semua secret.
 - Untuk deploy, AI service lebih aman dipisah dari Vercel karena TensorFlow berat dan biasanya tidak cocok untuk serverless Node.

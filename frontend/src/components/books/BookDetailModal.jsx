@@ -30,7 +30,7 @@ const catLabels = {
   management: "Manajemen",
 };
 
-const BookDetailModal = ({ book, onClose }) => {
+const BookDetailModal = ({ book, onClose, onReadNow }) => {
   if (!book) return null;
   const categoryKeys = book.categoryKeys || [book.category];
 
@@ -101,6 +101,7 @@ const BookDetailModal = ({ book, onClose }) => {
             href={`https://www.google.com/search?q=${encodeURIComponent(`${book.title} ${book.author}`)}`}
             target="_blank"
             rel="noreferrer"
+            onClick={() => onReadNow?.(book)}
             className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#1E293B] bg-[#8B5CF6] py-3.5 font-bold text-white shadow-[4px_4px_0px_0px_#1E293B] transition-all hover:-translate-y-0.5"
           >
             <FiExternalLink size={16} /> Baca Sekarang

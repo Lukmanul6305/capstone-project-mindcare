@@ -1,36 +1,60 @@
 import { getBookCover } from "../../utils/bookCover.js";
-import { getGoogleBooksThumbnail, getGoogleBooksDescription } from "../../providers/googleBooksProvider.js";
+import { searchBookMetadata } from "../../utils/bookSearch.js";
 import { fetchOpenLibraryDoc, OPEN_LIBRARY_COVER } from "../../providers/openLibraryProvider.js";
 
 const PLACEHOLDER_COVER = "https://via.placeholder.com/300x450?text=No+Cover";
+const USE_GOOGLE_BOOKS = process.env.BOOK_GOOGLE_LOOKUP_ENABLED === "true";
+const USE_OPEN_LIBRARY = process.env.BOOK_OPEN_LIBRARY_ENABLED === "true";
 
-export const findBookThumbnail = async (judul, penulis, fallbackThumbnail = null) => {
-    const result = await getGoogleBooksThumbnail(judul, penulis);
-    if (result?.startsWith("http")) return result;       // thumbnail URL
-    if (result) return getBookCover(result); // ISBN
+const normalizeThumbnail = (thumbnail, fallbackThumbnail = null) =>
+    thumbnail?.replace?.("http://", "https://") ||
+    fallbackThumbnail?.replace?.("http://", "https://") ||
+    PLACEHOLDER_COVER;
 
-    try {
-        const doc = await fetchOpenLibraryDoc(judul);
-        if (doc?.cover_i) return OPEN_LIBRARY_COVER(doc.cover_i);
-        if (doc?.isbn?.[0]) return getBookCover(doc.isbn[0]);
-    } catch (error) {
-        console.log(`[WARN] Open Library search failed for ${judul}:`, error.message);
+const buildDefaultDescription = (judul, penulis) =>
+    `Rekomendasi buku "${judul}" oleh ${penulis ?? "penulis terkenal"}. Buku ini cocok untuk membantu kesehatan mental Anda.`;
+
+export const findBookEnrichment = async (judul, penulis, fallbackThumbnail = null, defaultDesc = null) => {
+    let thumbnail = null;
+    let deskripsi = null;
+
+    if (USE_GOOGLE_BOOKS) {
+        const metadata = await searchBookMetadata(judul, penulis);
+        if (metadata?.thumbnail) {
+            thumbnail = metadata.thumbnail;
+        } else if (metadata?.isbn) {
+            thumbnail = getBookCover(metadata.isbn);
+        }
+
+        if (metadata?.description) {
+            deskripsi = metadata.description;
+        }
     }
 
-    return fallbackThumbnail?.replace?.("http://", "https://") || PLACEHOLDER_COVER;
+    if (USE_OPEN_LIBRARY && (!thumbnail || !deskripsi)) {
+        try {
+            const doc = await fetchOpenLibraryDoc(judul);
+            if (!thumbnail && doc?.cover_i) thumbnail = OPEN_LIBRARY_COVER(doc.cover_i);
+            if (!thumbnail && doc?.isbn?.[0]) thumbnail = getBookCover(doc.isbn[0]);
+            if (!deskripsi && doc?.first_sentence?.[0]) deskripsi = doc.first_sentence[0];
+            if (!deskripsi && typeof doc?.description === "string") deskripsi = doc.description;
+        } catch (error) {
+            console.log(`[WARN] Open Library search failed for ${judul}:`, error.message);
+        }
+    }
+
+    return {
+        thumbnail: normalizeThumbnail(thumbnail, fallbackThumbnail),
+        deskripsi: deskripsi ?? defaultDesc ?? buildDefaultDescription(judul, penulis)
+    };
+};
+
+export const findBookThumbnail = async (judul, penulis, fallbackThumbnail = null) => {
+    const result = await findBookEnrichment(judul, penulis, fallbackThumbnail);
+    return result.thumbnail;
 };
 
 export const findBookDescription = async (judul, penulis, defaultDesc = null) => {
-    const description = await getGoogleBooksDescription(judul, penulis);
-    if (description) return description;
-
-    try {
-        const doc = await fetchOpenLibraryDoc(judul);
-        if (doc?.first_sentence?.[0]) return doc.first_sentence[0];
-        if (doc?.description) return doc.description;
-    } catch {
-        console.log(`[WARN] Open Library description failed for ${judul}`);
-    }
-
-    return defaultDesc ?? `Rekomendasi buku "${judul}" oleh ${penulis ?? "penulis terkenal"}. Buku ini cocok untuk membantu kesehatan mental Anda.`;
+    const result = await findBookEnrichment(judul, penulis, null, defaultDesc);
+    return result.deskripsi;
 };

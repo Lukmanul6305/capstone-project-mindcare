@@ -10,15 +10,13 @@
 export const buildAIInput = (kuesioner) => ({
     "Umur": kuesioner.umur,
     "Pekerjaan": kuesioner.pekerjaan,
-    "Tingkat stres": kuesioner.tingkat_stres,
-    "Penyebab stres": kuesioner.penyebab_stres,
-    "Durasi stres": kuesioner.durasi_stres,
-    "Kualitas tidur": kuesioner.kualitas_tidur,
-    "Waktu luang per hari": kuesioner.waktu_luang,
-    "Aktivitas fisik": kuesioner.aktivitas_fisik,
-    "Preferensi": {
-        "olahraga": kuesioner.preferensi_olahraga,
-        "membaca": kuesioner.preferensi_membaca,
-        "journaling": kuesioner.preferensi_journaling
-    }
+    "Tingkat_stres": kuesioner.tingkat_stres,
+    "Penyebab_stres": kuesioner.penyebab_stres,
+    "Durasi_stres": kuesioner.durasi_stres,
+    "Kualitas_tidur": kuesioner.kualitas_tidur,
+    "Waktu_luang": kuesioner.waktu_luang,
+    "Aktivitas_fisik": kuesioner.aktivitas_fisik,
+    "pref_olahraga": kuesioner.preferensi_olahraga,
+    "pref_membaca": kuesioner.preferensi_membaca,
+    "pref_journaling": kuesioner.preferensi_journaling
 });

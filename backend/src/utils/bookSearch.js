@@ -1,5 +1,20 @@
 // utils/bookSearch.js - Versi lebih agresif
 
+const FETCH_TIMEOUT_MS = 4000;
+
+const fetchGoogleBooksJson = async (query, maxResults) => {
+    const response = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${maxResults}`,
+        { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+    );
+
+    if (!response.ok) {
+        throw new Error(`Google Books HTTP ${response.status}`);
+    }
+
+    return response.json();
+};
+
 export async function searchBookMetadata(title, author = "") {
     try {
         // Bersihkan judul untuk query
@@ -17,11 +32,7 @@ export async function searchBookMetadata(title, author = "") {
         
         console.log(`[DEBUG] Searching Google Books: ${query}`);
         
-        const res = await fetch(
-            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`
-        );
-        
-        const data = await res.json();
+        const data = await fetchGoogleBooksJson(query, 5);
         
         if (data.items && data.items.length > 0) {
             // Cari yang paling relevan
@@ -78,10 +89,7 @@ export async function searchBookMetadata(title, author = "") {
         
         // Strategy 2: Coba dengan hanya judul (tanpa author)
         console.log(`[DEBUG] Fallback: searching with title only: ${cleanTitle}`);
-        const fallbackRes = await fetch(
-            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(cleanTitle)}&maxResults=3`
-        );
-        const fallbackData = await fallbackRes.json();
+        const fallbackData = await fetchGoogleBooksJson(cleanTitle, 3);
         
         if (fallbackData.items && fallbackData.items.length > 0) {
             const info = fallbackData.items[0].volumeInfo;

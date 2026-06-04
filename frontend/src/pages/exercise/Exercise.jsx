@@ -408,6 +408,7 @@ const Exercise = () => {
   };
 
   const featureStarted = panel === "prep" || panel === "tracking";
+  const showCancelButton = panel === "prep";
 
   return (
     <div className="min-h-screen bg-[#F4F5F9] text-[#1E293B]">
@@ -437,7 +438,7 @@ const Exercise = () => {
           </header>
 
           <div className="mx-auto max-w-6xl p-8 lg:p-12">
-            {featureStarted ? (
+            {showCancelButton ? (
               <div className="mb-6 flex justify-end">
                 <button
                   onClick={cancelExercise}

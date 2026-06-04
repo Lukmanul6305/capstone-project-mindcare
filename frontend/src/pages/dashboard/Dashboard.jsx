@@ -6,13 +6,7 @@ import MoodChartCard from "../../components/dashboard/MoodChartCard";
 import StatusCards from "../../components/dashboard/StatusCards";
 import WelcomeCard from "../../components/dashboard/WelcomeCard";
 import AppSidebar from "../../components/layout/AppSidebar";
-import {
-  apiRequest,
-  getMyBookSessions,
-  getMyKuesioner,
-  getMyOlahraga,
-} from "../../lib/api";
-import { getBookSessions } from "../../lib/mindcareBookSessions";
+import { apiRequest } from "../../lib/api";
 import { readAppData } from "../../lib/storage";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -92,10 +86,6 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     user: readAppData("user", {}),
     stressScans: [],
-    kuesioner: [],
-    journals: [],
-    olahraga: [],
-    bookSessions: [],
   });
 
   useEffect(() => {
@@ -116,27 +106,16 @@ const Dashboard = () => {
       setLoading(true);
 
       try {
-        const [userRes, scansRes, kuesionerRes, journalsRes, olahragaRes, bookSessionsRes] = await Promise.all([
+        const [userRes, scansRes] = await Promise.all([
           withFallback(apiRequest("/api/auth/me")),
           withFallback(apiRequest("/api/stress-scan/me")),
-          withFallback(getMyKuesioner()),
-          withFallback(apiRequest("/api/journal/me")),
-          withFallback(getMyOlahraga()),
-          withFallback(getMyBookSessions()),
         ]);
 
         if (!mounted) return;
 
-        const remoteBookSessions = extractArrayPayload(bookSessionsRes?.payload, "sessions");
-        const localBookSessions = Array.isArray(getBookSessions()) ? getBookSessions() : [];
-
         setDashboardData((prev) => ({
           user: userRes?.payload?.user || prev.user,
           stressScans: extractArrayPayload(scansRes?.payload, "scans"),
-          kuesioner: extractArrayPayload(kuesionerRes?.payload, "kuesioner"),
-          journals: extractArrayPayload(journalsRes?.payload, "journals"),
-          olahraga: extractArrayPayload(olahragaRes?.payload, "olahraga"),
-          bookSessions: remoteBookSessions.length ? remoteBookSessions : localBookSessions,
         }));
       } finally {
         if (mounted) setLoading(false);
@@ -151,7 +130,7 @@ const Dashboard = () => {
 
   const moodInfo = useMemo(() => {
     const todayKey = toDateKey(new Date());
-    const todayCandidates = [...dashboardData.stressScans, ...dashboardData.kuesioner]
+    const todayCandidates = dashboardData.stressScans
       .filter((item) => toDateKey(item?.createdAt || item?.tanggal) === todayKey)
       .sort((a, b) => new Date(b.createdAt || b.tanggal) - new Date(a.createdAt || a.tanggal));
 
@@ -162,7 +141,7 @@ const Dashboard = () => {
       hasCheckIn: Boolean(latest),
       moodToday: moodKey ? moodToEmoji[moodKey] : "--",
     };
-  }, [dashboardData.kuesioner, dashboardData.stressScans]);
+  }, [dashboardData.stressScans]);
 
   const streakInfo = useMemo(() => {
     const activeDayKeys = new Set();
@@ -171,11 +150,7 @@ const Dashboard = () => {
       if (key) activeDayKeys.add(key);
     };
 
-    dashboardData.stressScans.forEach((item) => addActivityDay(item?.createdAt));
-    dashboardData.kuesioner.forEach((item) => addActivityDay(item?.createdAt));
-    dashboardData.journals.forEach((item) => addActivityDay(item?.createdAt));
-    dashboardData.olahraga.forEach((item) => addActivityDay(item?.tanggal || item?.createdAt));
-    dashboardData.bookSessions.forEach((item) => addActivityDay(item?.date));
+    dashboardData.stressScans.forEach((item) => addActivityDay(item?.createdAt || item?.tanggal));
 
     const today = toDayStart(new Date()) || new Date();
     let current = 0;
@@ -226,7 +201,7 @@ const Dashboard = () => {
       longest,
       weekItems,
     };
-  }, [dashboardData.bookSessions, dashboardData.journals, dashboardData.kuesioner, dashboardData.olahraga, dashboardData.stressScans]);
+  }, [dashboardData.stressScans]);
 
   const moodRows = useMemo(() => {
     const byDay = new Map();
@@ -245,7 +220,6 @@ const Dashboard = () => {
     };
 
     registerMood(dashboardData.stressScans);
-    registerMood(dashboardData.kuesioner);
 
     const today = toDayStart(new Date()) || new Date();
     return Array.from({ length: 7 }, (_, offset) => {
@@ -260,7 +234,7 @@ const Dashboard = () => {
         moodKey: found?.moodKey ?? null,
       };
     });
-  }, [dashboardData.kuesioner, dashboardData.stressScans]);
+  }, [dashboardData.stressScans]);
 
   if (loading) {
     return (

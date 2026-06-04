@@ -5,7 +5,7 @@ const BooksSessionHistory = ({ sessions }) => {
     return (
       <div className="rounded-3xl border-2 border-dashed border-[#CBD5E1] bg-white/40 p-8 text-center">
         <p className="font-medium text-[#64748B]">
-          Belum ada sesi yang dicatat. Di halaman rekomendasi, jelajahi buku lalu tekan <span className="font-semibold text-[#1E293B]">Catat sesi</span>.
+          Belum ada sesi yang dicatat. Buka kartu buku, tekan <span className="font-semibold text-[#1E293B]">Baca Sekarang</span>, lalu tutup kartu saat selesai membaca.
         </p>
       </div>
     );
@@ -42,7 +42,7 @@ const BooksSessionHistory = ({ sessions }) => {
             <div className="border-t border-[#E2E8F0] pt-4">
               <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#64748B]">
                 <FiBook size={14} className="text-[#8B5CF6]" aria-hidden />
-                Buku rekomendasi yang dibuka
+                Buku rekomendasi yang dibaca
               </p>
               {books.length ? (
                 <ul className="max-h-48 space-y-2 overflow-y-auto pr-1 text-sm">
@@ -58,7 +58,7 @@ const BooksSessionHistory = ({ sessions }) => {
                 </ul>
               ) : (
                 <p className="text-sm font-medium italic text-[#94A3B8]">
-                  Tidak ada detail buku (sesi lama atau Anda hanya mengganti filter tanpa membuka kartu buku).
+                  Tidak ada detail buku dari sesi lama.
                 </p>
               )}
             </div>

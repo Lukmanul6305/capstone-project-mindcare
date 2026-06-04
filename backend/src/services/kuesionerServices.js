@@ -60,7 +60,7 @@ const getStressCategoryTarget = (penyebabStres = "") => {
 const shuffleBooks = (books) => [...books].sort(() => Math.random() - 0.5);
 
 const getFallbackBooks = async (inputAI, limit = 3) => {
-    const csvPath = path.join(process.cwd(), "model", "recommendation", "dataset", "mindcare_books_dataset.csv");
+    const csvPath = path.join(process.cwd(), "src", "data", "mindcare_books_dataset.csv");
     const csv = await fs.readFile(csvPath, "utf8");
     const lines = csv.trim().split(/\r?\n/);
     const headers = parseCsvLine(lines[0]);
@@ -79,8 +79,8 @@ const getFallbackBooks = async (inputAI, limit = 3) => {
         };
     });
 
-    const level = getStressLevelTarget(inputAI?.["Tingkat stres"]);
-    const category = getStressCategoryTarget(inputAI?.["Penyebab stres"]);
+    const level = getStressLevelTarget(inputAI?.Tingkat_stres ?? inputAI?.["Tingkat stres"]);
+    const category = getStressCategoryTarget(inputAI?.Penyebab_stres ?? inputAI?.["Penyebab stres"]);
 
     const exactMatches = rows.filter((book) =>
         book.stressLevelTarget === level &&

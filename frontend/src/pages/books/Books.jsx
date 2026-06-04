@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 import BookDetailModal from "../../components/books/BookDetailModal";
 import BooksFilterBar from "../../components/books/BooksFilterBar";
 import BooksGrid from "../../components/books/BooksGrid";
-import BooksSessionTimer from "../../components/books/BooksSessionTimer";
 import AppSidebar from "../../components/layout/AppSidebar";
 import { useAlertPopup } from "../../hooks/useAlertPopup";
 import {
@@ -75,12 +74,8 @@ const Books = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentFilter, setCurrentFilter] = useState("all");
   const [selectedBook, setSelectedBook] = useState(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [savingSession, setSavingSession] = useState(false);
   const [aiBooks, setAiBooks] = useState(() => normalizeAiBooks(readUserData("ai_books", [])));
-  const sessionStartedRef = useRef(false);
-  const exploredBooksRef = useRef([]);
+  const activeReadingSessionRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -127,42 +122,22 @@ const Books = () => {
   }, [currentFilter, aiBooks]);
 
 
-  useEffect(() => {
-    if (!timerRunning) return undefined;
-    const id = window.setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [timerRunning]);
-
-  const tryStartTimer = () => {
-    if (sessionStartedRef.current) return;
-    sessionStartedRef.current = true;
-    setTimerRunning(true);
-  };
-
-  const resetSessionTimer = () => {
-    sessionStartedRef.current = false;
-    exploredBooksRef.current = [];
-    setTimerRunning(false);
-    setElapsedSeconds(0);
-  };
-
   const handleFilterChange = (newFilter) => {
-    if (newFilter !== currentFilter) {
-      tryStartTimer();
-    }
     setCurrentFilter(newFilter);
   };
 
-  const handleRecordSession = async () => {
-    if (!timerRunning || savingSession) return;
-
-    setSavingSession(true);
+  const saveReadingSession = async (session) => {
+    const durationSeconds = Math.max(1, Math.round((Date.now() - session.startedAt) / 1000));
     const payload = {
-      durationSeconds: elapsedSeconds,
+      durationSeconds,
       date: new Date().toISOString(),
-      exploredBooks: exploredBooksRef.current.map((item) => ({ ...item })),
+      exploredBooks: [
+        {
+          bookId: session.bookId,
+          title: session.title,
+          author: session.author,
+        },
+      ],
     };
 
     try {
@@ -180,10 +155,9 @@ const Books = () => {
       saveBookSessions(sessions);
 
       showAlert(
-        "Waktu sesi eksplorasi tersimpan dan tersinkron ke akun Anda.",
+        "Sesi membaca tersimpan dan tersinkron ke akun Anda.",
         { type: "success", title: "Sesi tersimpan" },
       );
-      resetSessionTimer();
     } catch {
       const sessions = getBookSessions();
       sessions.push({
@@ -195,23 +169,27 @@ const Books = () => {
       saveBookSessions(sessions);
 
       showAlert(
-        "Sesi tersimpan lokal, tetapi sinkronisasi backend gagal. Coba lagi nanti.",
+        "Sesi membaca tersimpan lokal, tetapi sinkronisasi backend gagal. Coba lagi nanti.",
         { type: "warning", title: "Sinkronisasi gagal" },
       );
-    } finally {
-      setSavingSession(false);
     }
   };
 
   const handleSelectBook = (book) => {
-    tryStartTimer();
-    if (!exploredBooksRef.current.some((b) => b.bookId === book.id)) {
-      exploredBooksRef.current = [
-        ...exploredBooksRef.current,
-        { bookId: book.id, title: book.title, author: book.author },
-      ];
-    }
     setSelectedBook(book);
+  };
+
+  const handleReadNow = (book) => {
+    const bookId = String(book.id);
+    const activeSession = activeReadingSessionRef.current;
+    if (!activeSession || activeSession.bookId !== bookId) {
+      activeReadingSessionRef.current = {
+        bookId,
+        title: book.title,
+        author: book.author,
+        startedAt: Date.now(),
+      };
+    }
 
     const booksRead = readUserData("books_read", []);
     if (!booksRead.find((item) => item.bookId === book.id)) {
@@ -228,6 +206,16 @@ const Books = () => {
         console.error("Gagal sinkron riwayat buku dibuka:", err);
       }
     });
+  };
+
+  const handleCloseBook = () => {
+    const activeSession = activeReadingSessionRef.current;
+    activeReadingSessionRef.current = null;
+    setSelectedBook(null);
+
+    if (activeSession) {
+      saveReadingSession(activeSession);
+    }
   };
 
   return (
@@ -259,10 +247,6 @@ const Books = () => {
               >
                 Riwayat eksplorasi
               </Link>
-              <BooksSessionTimer
-                onRecordSession={handleRecordSession}
-                disabledRecord={!timerRunning || savingSession}
-              />
             </div>
           </header>
 
@@ -275,7 +259,7 @@ const Books = () => {
         </main>
       </div>
 
-      <BookDetailModal book={selectedBook} onClose={() => setSelectedBook(null)} />
+      <BookDetailModal book={selectedBook} onClose={handleCloseBook} onReadNow={handleReadNow} />
     </div>
   );
 };
