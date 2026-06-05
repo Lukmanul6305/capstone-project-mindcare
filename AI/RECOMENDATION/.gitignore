@@ -1,0 +1,36 @@
+# Python virtual environments
+rekomendasi/
+venv/
+env/
+.env
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Dataset (besar, simpan di storage/drive terpisah)
+# dataset/ 
+# CATATAN: Hapus tanda # di atas jika dataset besar (>1GB)
+# Untuk sekarang dataset tetap disertakan karena dibutuhkan training
+
+# Visualisasi hasil (bisa dibuat ulang setelah training)
+confusion_matrix.png
+overfitting_analysis.png
+
+# Editor & OS junk
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Pytest
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Zip files
+*.zip
+
