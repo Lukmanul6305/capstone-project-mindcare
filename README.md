@@ -13,7 +13,7 @@
 ## 📷 Tampilan
 
 ### Dasboard
-<img width="1283" height="1226" alt="dasboard" src="https://github.com/user-attachments/assets/837ec66f-e11c-4f88-be5b-6336e2ac75f9" />
+<img width="1366" height="1152" alt="dashboard" src="https://github.com/user-attachments/assets/f9f6fa75-fba4-4862-9fb2-55590a4d5573" />
 
 ### Daily Check-in
 <img width="1366" height="659" alt="Daily Checkin" src="https://github.com/user-attachments/assets/dd5919b3-8b39-4e22-b82a-a613992a7f50" />
