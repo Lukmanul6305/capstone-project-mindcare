@@ -91,8 +91,11 @@ export async function apiRequest(path, options = {}) {
 
   const json = await res.json().catch(() => null);
 
-  // Jika unauthorized dan belum pernah retry, coba refresh token
-  if (res.status === 401 && retryOnAuthFail && auth) {
+  const isInvalidToken =
+    res.status === 403 && typeof json?.msg === "string" && json.msg.toLowerCase().includes("token");
+
+  // Jika token ditolak dan belum pernah retry, coba refresh token
+  if ((res.status === 401 || isInvalidToken) && retryOnAuthFail && auth) {
     const newToken = await refreshAccessToken();
     if (newToken) {
       // Retry dengan token baru
