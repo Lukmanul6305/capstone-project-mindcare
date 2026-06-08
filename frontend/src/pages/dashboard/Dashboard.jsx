@@ -5,6 +5,7 @@ import ActivityGrid from "../../components/dashboard/ActivityGrid";
 import MoodChartCard from "../../components/dashboard/MoodChartCard";
 import StatusCards from "../../components/dashboard/StatusCards";
 import WelcomeCard from "../../components/dashboard/WelcomeCard";
+import StressReductionForm from "../../components/dashboard/StressReductionForm";
 import AppSidebar from "../../components/layout/AppSidebar";
 import { apiRequest } from "../../lib/api";
 import { readAppData } from "../../lib/storage";
@@ -163,6 +164,19 @@ const Dashboard = () => {
     });
   }, [dashboardData.stressScans]);
 
+  const handleStressUpdate = (newStress) => {
+    setDashboardData((prev) => ({
+      ...prev,
+      stressProgress: {
+        ...prev.stressProgress,
+        state: {
+          ...(prev.stressProgress?.state || {}),
+          stress_saat_ini_percent: newStress
+        }
+      }
+    }));
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F4F5F9]">
@@ -194,6 +208,10 @@ const Dashboard = () => {
               hasCheckIn={moodInfo.hasCheckIn}
             />
             <ActivityGrid />
+            <StressReductionForm 
+              currentStress={dashboardData.stressProgress?.state?.stress_saat_ini_percent || 0}
+              onStressUpdate={handleStressUpdate}
+            />
             <MoodChartCard moodRows={moodRows} />
           </div>
         </main>

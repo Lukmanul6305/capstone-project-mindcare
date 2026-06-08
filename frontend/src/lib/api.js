@@ -148,6 +148,17 @@ export async function getMyStressProgress() {
 }
 
 /**
+ * POST /api/stress/update
+ * Kalkulasi penurunan stress setelah aktivitas
+ */
+export async function calculateStressReductionAPI(data) {
+  return apiRequest("/api/stress/update", {
+    method: "POST",
+    body: data,
+  });
+}
+
+/**
  * GET /api/kuesioner/rekomendasi
  * Ambil riwayat rekomendasi (termasuk riwayat buku) milik user
  */

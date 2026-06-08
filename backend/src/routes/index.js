@@ -9,6 +9,7 @@ import stressScanRouter from "./stressScanRouter.js";
 import stressProgressRouter from "./stressProgressRouter.js";
 import bookRouter from "./bookRouter.js";
 import matchRouteRouter from "./matchRouteRouter.js";
+import stressRouter from "./stressRouter.js";
 
 const router = express.Router();
 
@@ -22,6 +23,7 @@ const routes = [
     { path: "/stress-progress", handler: stressProgressRouter },
     { path: "/books", handler: bookRouter },
     { path: "/match-route", handler: matchRouteRouter },
+    { path: "/stress", handler: stressRouter },
 ];
 
 routes.forEach(({ path, handler }) => router.use(path, handler));
