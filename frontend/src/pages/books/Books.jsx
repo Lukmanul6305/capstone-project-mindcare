@@ -17,11 +17,7 @@ import { pickBookCategoryKeys } from "../../lib/bookCategories";
 import { normalizeThumbnailUrl } from "../../lib/bookCoverResolver";
 import { getBookSessions, saveBookSessions } from "../../lib/mindcareBookSessions";
 import { readUserData, writeUserData } from "../../lib/storage";
-
-const formatPercent = (value) => {
-  const percent = Number(value);
-  return Number.isFinite(percent) ? `${Math.round(percent)}%` : "--";
-};
+import { getStressProgressAlert } from "../../utils/stressProgressAlert";
 
 const normalizeAiBooks = (storedBooks) => (
   Array.isArray(storedBooks)
@@ -230,14 +226,12 @@ const Books = () => {
       sessions.push(localSession);
       saveBookSessions(sessions);
 
-      const stressLog = saved?.stress_progress?.reduction_log;
-      const stressState = saved?.stress_progress?.state;
-      showAlert(
-        stressLog
-          ? `Sesi membaca tersimpan. Stress turun ${formatPercent(stressLog.penurunan_percent)} menjadi ${formatPercent(stressState?.stress_saat_ini_percent)}.`
-          : "Sesi membaca tersimpan dan tersinkron ke akun Anda.",
-        { type: "success", title: "Sesi tersimpan" },
+      const alert = getStressProgressAlert(
+        saved?.stress_progress,
+        "Sesi membaca tersimpan dan tersinkron ke akun Anda.",
+        "Sesi tersimpan",
       );
+      showAlert(alert.message, alert.options);
     } catch {
       const sessions = getBookSessions();
       sessions.push({

@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `tb_user_stress_state` (
   `stress_saat_ini_percent` decimal(5,2) NOT NULL COMMENT 'stress berjalan setelah aktivitas',
   `kategori_stress` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `keterangan_stress` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `baseline_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `createdAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -18,6 +19,10 @@ CREATE TABLE IF NOT EXISTS `tb_user_stress_state` (
 ALTER TABLE `tb_user_stress_state`
   ADD COLUMN IF NOT EXISTS `keterangan_stress` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
   AFTER `kategori_stress`;
+
+ALTER TABLE `tb_user_stress_state`
+  ADD COLUMN IF NOT EXISTS `baseline_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+  AFTER `keterangan_stress`;
 
 CREATE TABLE IF NOT EXISTS `tb_stress_reduction_log` (
   `id` int NOT NULL AUTO_INCREMENT,

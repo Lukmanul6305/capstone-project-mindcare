@@ -7,11 +7,8 @@ import JournalWritePanel from "../../components/journaling/JournalWritePanel";
 import AppSidebar from "../../components/layout/AppSidebar";
 import { useAlertPopup } from "../../hooks/useAlertPopup";
 import { apiRequest } from "../../lib/api";
-
-const formatPercent = (value) => {
-  const percent = Number(value);
-  return Number.isFinite(percent) ? `${Math.round(percent)}%` : "--";
-};
+import { getActivityDurationMinutesFromSeconds } from "../../utils/activityDuration";
+import { getStressProgressAlert } from "../../utils/stressProgressAlert";
 
 const Journaling = () => {
   const { showAlert } = useAlertPopup();
@@ -91,8 +88,7 @@ const Journaling = () => {
   };
 
   const getDurationMinutes = () => {
-    if (!elapsedSeconds) return 1;
-    return Math.min(255, Math.max(1, Math.ceil(elapsedSeconds / 60)));
+    return getActivityDurationMinutesFromSeconds(elapsedSeconds, { maxMinutes: 255 });
   };
 
   const cancelJournal = () => {
@@ -121,14 +117,8 @@ const Journaling = () => {
         },
       });
 
-      const stressLog = res?.payload?.stress_progress?.reduction_log;
-      const stressState = res?.payload?.stress_progress?.state;
-      showAlert(
-        stressLog
-          ? `Jurnal disimpan. Stress turun ${formatPercent(stressLog.penurunan_percent)} menjadi ${formatPercent(stressState?.stress_saat_ini_percent)}.`
-          : "Jurnal disimpan!",
-        { type: "success", title: "Berhasil" },
-      );
+      const alert = getStressProgressAlert(res?.payload?.stress_progress, "Jurnal disimpan!", "Berhasil");
+      showAlert(alert.message, alert.options);
       setTitle("");
       setContent("");
       resetSessionTimer();

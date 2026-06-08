@@ -6,7 +6,7 @@ const STRESS_CATEGORY_RANGES = [
     { max: 100, label: "Sangat Tinggi" }
 ];
 
-const ACTIVITY_REDUCTION_RULES = {
+export const ACTIVITY_REDUCTION_RULES = {
     membaca: { rate: 0.2, maxReduction: 10 },
     journaling: { rate: 0.4, maxReduction: 12 },
     olahraga: { rate: 0.4, maxReduction: 20 }
@@ -15,6 +15,12 @@ const ACTIVITY_REDUCTION_RULES = {
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const roundPercent = (value) => Math.round(value * 100) / 100;
+
+export const normalizeActivityDurationMinutes = (durationMinutes) => {
+    const minutes = Number(durationMinutes);
+    if (!Number.isFinite(minutes) || minutes <= 0) return 0;
+    return Math.max(1, Math.round(minutes));
+};
 
 export const normalizeStressPercent = (value) => {
     const percent = Number(value);
@@ -36,9 +42,9 @@ export const getStressCategory = (stressPercent) => {
 export const getActivityReduction = (activity, durationMinutes) => {
     const normalizedActivity = String(activity || "").toLowerCase().trim();
     const rule = ACTIVITY_REDUCTION_RULES[normalizedActivity];
-    const minutes = Number(durationMinutes);
+    const minutes = normalizeActivityDurationMinutes(durationMinutes);
 
-    if (!rule || !Number.isFinite(minutes) || minutes <= 0) {
+    if (!rule || minutes <= 0) {
         return 0;
     }
 
@@ -47,12 +53,13 @@ export const getActivityReduction = (activity, durationMinutes) => {
 
 export const calculateStressAfterActivity = (stressBefore, activity, durationMinutes) => {
     const before = normalizeStressPercent(stressBefore);
-    const reduction = getActivityReduction(activity, durationMinutes);
-    const after = normalizeStressPercent(before - reduction);
+    const plannedReduction = getActivityReduction(activity, durationMinutes);
+    const after = normalizeStressPercent(before - plannedReduction);
+    const actualReduction = roundPercent(before - after);
 
     return {
         stress_sebelum: before,
-        penurunan_percent: reduction,
+        penurunan_percent: actualReduction,
         stress_sesudah: after,
         kategori_stress: getStressCategory(after)
     };
