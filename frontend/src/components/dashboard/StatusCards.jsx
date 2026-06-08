@@ -2,10 +2,30 @@ import { FiActivity, FiCheckCircle, FiSmile, FiTrendingDown, FiZap } from "react
 
 const chipClass = "rounded-full px-3 py-1 text-xs font-extrabold";
 
+const toFiniteNumber = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
 const formatPercent = (value) => {
-  const percent = Number(value);
-  if (!Number.isFinite(percent)) return "--";
-  return `${Math.round(percent)}%`;
+  const percent = toFiniteNumber(value);
+  if (percent === null) return "--";
+
+  const rounded = Math.round(percent * 10) / 10;
+  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}%`;
+};
+
+const formatMinutes = (value) => {
+  const minutes = toFiniteNumber(value);
+  if (minutes === null || minutes <= 0) return "--";
+
+  const roundedMinutes = Math.max(1, Math.round(minutes));
+  if (roundedMinutes < 60) return `${roundedMinutes} menit`;
+
+  const hours = Math.floor(roundedMinutes / 60);
+  const remainingMinutes = roundedMinutes % 60;
+
+  return remainingMinutes ? `${hours} jam ${remainingMinutes} menit` : `${hours} jam`;
 };
 
 const formatActivity = (value) => {
@@ -28,14 +48,39 @@ const getStressTone = (category = "") => {
   return "text-[#64748B] bg-[#F1F5F9] border-[#E2E8F0]";
 };
 
+const getStressBarColor = (category = "") => {
+  const normalized = String(category).toLowerCase();
+  if (normalized.includes("sangat rendah")) return "bg-emerald-500";
+  if (normalized === "rendah") return "bg-teal-500";
+  if (normalized === "sedang") return "bg-amber-400";
+  if (normalized === "tinggi") return "bg-orange-500";
+  if (normalized.includes("sangat tinggi")) return "bg-red-500";
+  return "bg-[#8B5CF6]";
+};
+
 const StatusCards = ({ stressProgress, moodToday, hasCheckIn }) => {
   const state = stressProgress?.state || null;
+  const summary = stressProgress?.summary || null;
   const recentLogs = Array.isArray(stressProgress?.recent_logs) ? stressProgress.recent_logs : [];
   const latestLog = recentLogs[0] || null;
-  const currentStress = Number(state?.stress_saat_ini_percent);
-  const hasStressState = Number.isFinite(currentStress);
+  const currentStress = toFiniteNumber(state?.stress_saat_ini_percent);
+  const totalReduction = toFiniteNumber(summary?.total_reduction_percent);
+  const totalDurationMinutes = toFiniteNumber(summary?.total_duration_minutes);
+  const totalActivities = toFiniteNumber(summary?.total_activities);
+  const hasStressState = currentStress !== null;
+  const hasReductionSummary = totalReduction !== null;
   const progressWidth = hasStressState ? Math.min(100, Math.max(0, currentStress)) : 0;
   const category = state?.kategori_stress || "Belum ada data";
+  const trendText = hasStressState
+    ? !hasReductionSummary
+      ? "Data penurunan belum tersedia"
+      : totalReduction > 0
+      ? `Total turun ${formatPercent(totalReduction)} dari baseline`
+      : "Belum turun dari baseline"
+    : "Belum ada baseline stress";
+  const latestActivityText = latestLog
+    ? `${formatActivity(latestLog.aktivitas)} - ${formatMinutes(latestLog.durasi_menit)} - turun ${formatPercent(latestLog.penurunan_percent)}`
+    : "Belum ada aktivitas tersimpan";
 
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
@@ -44,7 +89,7 @@ const StatusCards = ({ stressProgress, moodToday, hasCheckIn }) => {
           <div>
             <h3 className="text-2xl font-extrabold text-[#1E293B]">Tingkat Stres Saat Ini</h3>
             <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-[#64748B]">
-              Angka terbaru dari kuesioner dan aktivitas yang sudah disimpan.
+              Dihitung dari baseline kuesioner terakhir dan aktivitas setelah baseline tersebut.
             </p>
           </div>
           <span className={`${chipClass} border ${getStressTone(category)}`}>
@@ -63,18 +108,28 @@ const StatusCards = ({ stressProgress, moodToday, hasCheckIn }) => {
           </div>
           <div className="flex items-center gap-2 text-sm font-bold text-emerald-700">
             <FiTrendingDown size={18} />
-            {latestLog
-              ? `Turun ${formatPercent(latestLog.penurunan_percent)} dari ${formatActivity(latestLog.aktivitas)}`
-              : "Belum ada penurunan aktivitas"}
+            {trendText}
           </div>
         </div>
 
         <div className="mt-6 h-4 overflow-hidden rounded-full border border-[#CBD5E1] bg-[#F1F5F9]">
           <div
-            className="h-full rounded-full bg-[#8B5CF6] transition-all duration-500"
+            className={`h-full rounded-full ${getStressBarColor(category)} transition-all duration-500`}
             style={{ width: `${progressWidth}%` }}
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow={Math.round(progressWidth)}
           />
         </div>
+        <div className="mt-2 flex items-center justify-between text-xs font-bold text-[#94A3B8]">
+          <span>0%</span>
+          <span>100%</span>
+        </div>
+
+        <p className="mt-4 text-sm font-bold text-[#475569]">
+          Aktivitas terakhir: {latestActivityText}
+        </p>
 
         {state?.keterangan_stress ? (
           <p className="mt-4 text-sm font-medium leading-relaxed text-[#475569]">
@@ -82,7 +137,7 @@ const StatusCards = ({ stressProgress, moodToday, hasCheckIn }) => {
           </p>
         ) : null}
 
-        <div className="mt-6 grid grid-cols-1 gap-4 border-t border-[#E2E8F0] pt-5 text-sm sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-4 border-t border-[#E2E8F0] pt-5 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="font-bold text-[#64748B]">Baseline Kuesioner</p>
             <p className="mt-1 text-xl font-extrabold text-[#1E293B]">
@@ -96,9 +151,18 @@ const StatusCards = ({ stressProgress, moodToday, hasCheckIn }) => {
             </p>
           </div>
           <div>
-            <p className="font-bold text-[#64748B]">Durasi Terakhir</p>
+            <p className="font-bold text-[#64748B]">Total Penurunan</p>
             <p className="mt-1 text-xl font-extrabold text-[#1E293B]">
-              {latestLog ? `${latestLog.durasi_menit} menit` : "--"}
+              {formatPercent(totalReduction)}
+            </p>
+          </div>
+          <div>
+            <p className="font-bold text-[#64748B]">Durasi Aktivitas</p>
+            <p className="mt-1 text-xl font-extrabold text-[#1E293B]">
+              {formatMinutes(totalDurationMinutes)}
+            </p>
+            <p className="mt-1 font-bold text-[#94A3B8]">
+              {totalActivities > 0 ? `${totalActivities} aktivitas` : "Belum ada log"}
             </p>
           </div>
         </div>

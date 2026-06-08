@@ -12,6 +12,8 @@ import ExerciseTrackingPanel from "../../components/exercise/ExerciseTrackingPan
 import AppSidebar from "../../components/layout/AppSidebar";
 import { useAlertPopup } from "../../hooks/useAlertPopup";
 import { createOlahraga, getMyOlahraga, matchRoute } from "../../lib/api";
+import { getActivityDurationMinutesFromSeconds } from "../../utils/activityDuration";
+import { getStressProgressAlert } from "../../utils/stressProgressAlert";
 
 const haversine = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
@@ -27,11 +29,6 @@ const formatTimer = (seconds) => {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-};
-
-const formatPercent = (value) => {
-  const percent = Number(value);
-  return Number.isFinite(percent) ? `${Math.round(percent)}%` : "--";
 };
 
 const GPS_OPTIONS = {
@@ -364,6 +361,7 @@ const Exercise = () => {
   const finishTracking = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current);
+    const durationMinutes = getActivityDurationMinutesFromSeconds(seconds);
 
     // ✅ Joi validation expects lowercase: "lari", "jalan", "sepeda"
     const typeMapping = {
@@ -375,22 +373,19 @@ const Exercise = () => {
     const payload = {
       jenis: typeMapping[selectedActivity?.name] || "lari",
       jarak_km: Math.max(0.01, Number(distance.toFixed(2))),
-      durasi_menit: Math.max(1, Math.floor(seconds / 60)),
+      durasi_menit: durationMinutes,
       tanggal: new Date().toISOString().split("T")[0],
       rute_maps: []
     };
 
     try {
       const res = await createOlahraga(payload);
-      const stressLog = res?.payload?.stress_progress?.reduction_log;
-      const stressState = res?.payload?.stress_progress?.state;
-
-      if (stressLog) {
-        showAlert(
-          `Olahraga tersimpan. Stress turun ${formatPercent(stressLog.penurunan_percent)} menjadi ${formatPercent(stressState?.stress_saat_ini_percent)}.`,
-          { type: "success", title: "Stress diperbarui" },
-        );
-      }
+      const alert = getStressProgressAlert(
+        res?.payload?.stress_progress,
+        "Olahraga tersimpan.",
+        "Olahraga tersimpan",
+      );
+      showAlert(alert.message, alert.options);
 
       // ─── Map Matching via OSRM ────────────────────────────────────────────
       const collectedPoints = [...routePointsRef.current];
@@ -490,7 +485,7 @@ const Exercise = () => {
             ) : null}
             {panel === "summary" ? (
               <ExerciseSummaryPanel
-                durationText={`${Math.floor(seconds / 60)}m`}
+                durationText={`${getActivityDurationMinutesFromSeconds(seconds)}m`}
                 distance={distance}
                 matchedGeoJSON={matchedGeoJSON}
                 rawPoints={rawPoints}

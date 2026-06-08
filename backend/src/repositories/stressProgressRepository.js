@@ -15,6 +15,7 @@ const ensureTables = async () => {
             stress_saat_ini_percent decimal(5,2) NOT NULL COMMENT 'stress berjalan setelah aktivitas',
             kategori_stress varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
             keterangan_stress text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+            baseline_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             createdAt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updatedAt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
@@ -40,6 +41,33 @@ const ensureTables = async () => {
             `ALTER TABLE tb_user_stress_state
              ADD COLUMN keterangan_stress text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
              AFTER kategori_stress`
+        );
+    }
+
+    const [baselineAtColumn] = await db.query(
+        `SELECT COLUMN_NAME
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'tb_user_stress_state'
+           AND COLUMN_NAME = 'baseline_at'
+         LIMIT 1`,
+        { type: QueryTypes.SELECT }
+    );
+
+    if (!baselineAtColumn) {
+        await db.query(
+            `ALTER TABLE tb_user_stress_state
+             ADD COLUMN baseline_at datetime NULL DEFAULT NULL
+             AFTER keterangan_stress`
+        );
+        await db.query(
+            `UPDATE tb_user_stress_state
+             SET baseline_at = COALESCE(createdAt, CURRENT_TIMESTAMP)
+             WHERE baseline_at IS NULL`
+        );
+        await db.query(
+            `ALTER TABLE tb_user_stress_state
+             MODIFY baseline_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP`
         );
     }
 
@@ -73,6 +101,7 @@ const mapStateRow = (row) => row ? ({
     stress_saat_ini_percent: Number(row.stress_saat_ini_percent),
     kategori_stress: row.kategori_stress,
     keterangan_stress: row.keterangan_stress,
+    baseline_at: row.baseline_at,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt
 }) : null;
@@ -89,6 +118,13 @@ const mapLogRow = (row) => row ? ({
     stress_sesudah: Number(row.stress_sesudah),
     createdAt: row.createdAt
 }) : null;
+
+const mapSummaryRow = (row) => ({
+    total_activities: Number(row?.total_activities || 0),
+    total_duration_minutes: Number(row?.total_duration_minutes || 0),
+    total_logged_reduction_percent: Number(row?.total_logged_reduction_percent || 0),
+    last_activity_at: row?.last_activity_at || null
+});
 
 const stressProgressRepository = {
     async findStateByUserId(userId) {
@@ -114,14 +150,15 @@ const stressProgressRepository = {
         await ensureTables();
         await db.query(
             `INSERT INTO tb_user_stress_state
-             (user_id, kuesioner_id, stress_awal_percent, stress_saat_ini_percent, kategori_stress, keterangan_stress)
-             VALUES (?, ?, ?, ?, ?, ?)
+             (user_id, kuesioner_id, stress_awal_percent, stress_saat_ini_percent, kategori_stress, keterangan_stress, baseline_at)
+             VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
              ON DUPLICATE KEY UPDATE
                 kuesioner_id = VALUES(kuesioner_id),
                 stress_awal_percent = VALUES(stress_awal_percent),
                 stress_saat_ini_percent = VALUES(stress_saat_ini_percent),
                 kategori_stress = VALUES(kategori_stress),
                 keterangan_stress = VALUES(keterangan_stress),
+                baseline_at = CURRENT_TIMESTAMP,
                 updatedAt = CURRENT_TIMESTAMP`,
             {
                 replacements: [
@@ -216,6 +253,31 @@ const stressProgressRepository = {
         );
 
         return rows.map(mapLogRow);
+    },
+
+    async findReductionSummaryByUserId(userId, baselineAt = null) {
+        await ensureTables();
+        const replacements = [userId];
+        const baselineFilter = baselineAt ? "AND createdAt >= ?" : "";
+
+        if (baselineAt) replacements.push(baselineAt);
+
+        const [row] = await db.query(
+            `SELECT
+                COUNT(*) AS total_activities,
+                COALESCE(SUM(durasi_menit), 0) AS total_duration_minutes,
+                COALESCE(SUM(penurunan_percent), 0) AS total_logged_reduction_percent,
+                MAX(createdAt) AS last_activity_at
+             FROM tb_stress_reduction_log
+             WHERE user_id = ?
+             ${baselineFilter}`,
+            {
+                replacements,
+                type: QueryTypes.SELECT
+            }
+        );
+
+        return mapSummaryRow(row);
     }
 };
 

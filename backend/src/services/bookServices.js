@@ -73,10 +73,9 @@ const bookServices = {
             exploredBooks
         });
 
-        const durationMinutes = Math.max(1, Math.ceil(durationSeconds / 60));
         const stressProgress = await stressProgressServices.applyActivityReduction(userId, {
             activity: "membaca",
-            durationMinutes,
+            durationMinutes: durationSeconds / 60,
             sourceType: "book_session",
             sourceId: session?.id
         });
