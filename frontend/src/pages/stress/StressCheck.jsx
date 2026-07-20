@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { FiMenu } from "react-icons/fi";
+
+import MobileTopBar from "../../components/layout/MobileTopBar";
 
 import AppSidebar from "../../components/layout/AppSidebar";
 import StressIntroPanel from "../../components/stress/StressIntroPanel";
@@ -174,14 +175,7 @@ const StressCheck = () => {
         />
 
         <main className="flex-1 min-h-screen">
-          <div className="p-4 lg:hidden">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#1E293B] bg-white"
-            >
-              <FiMenu size={20} />
-            </button>
-          </div>
+          <MobileTopBar title="Cek Stress" onMenuClick={() => setSidebarOpen(true)} />
 
           <header className="hidden items-center gap-4 px-8 pt-10 pb-6 lg:flex">
             <div>

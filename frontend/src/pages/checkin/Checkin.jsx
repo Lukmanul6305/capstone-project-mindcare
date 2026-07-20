@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FiMenu } from "react-icons/fi";
+
+import MobileTopBar from "../../components/layout/MobileTopBar";
 
 import CheckinAnalyzingPanel from "../../components/checkin/CheckinAnalyzingPanel";
 import CheckinCameraPanel from "../../components/checkin/CheckinCameraPanel";
@@ -440,15 +441,7 @@ const Checkin = () => {
         />
 
         <main className="relative min-h-screen flex-1">
-          {/* Mobile menu button */}
-          <div className="p-4 lg:hidden">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#1E293B] bg-white"
-            >
-              <FiMenu size={20} />
-            </button>
-          </div>
+          <MobileTopBar title="Daily Check-in" onMenuClick={() => setSidebarOpen(true)} />
 
           {/* Desktop header */}
           <header className="hidden items-center gap-4 px-8 pt-10 pb-6 lg:flex">

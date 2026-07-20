@@ -35,21 +35,21 @@ const activities = [
 const ActivityGrid = () => {
   return (
     <section>
-      <h3 className="mb-4 flex items-center gap-2 text-lg font-extrabold">
+      <h3 className="mb-3 flex items-center gap-2 text-base font-extrabold sm:mb-4 sm:text-lg">
         <FiZap className="text-amber-400" size={20} />
         Mulai Aktivitas
       </h3>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         {activities.map(({ label, href, bg, iconBg, Icon }) => (
           <Link
             key={label}
             to={href}
-            className={`rounded-xl border p-6 flex flex-col items-center justify-center gap-3 transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#1E293B] ${bg}`}
+            className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#1E293B] active:scale-[0.96] active:shadow-[2px_2px_0px_0px_#1E293B] sm:gap-3 sm:p-6 ${bg}`}
           >
-            <div className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[#1E293B] shadow-[4px_4px_0px_0px_#1E293B] ${iconBg}`}>
+            <div className={`flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#1E293B] shadow-[4px_4px_0px_0px_#1E293B] sm:h-12 sm:w-12 ${iconBg}`}>
               <Icon size={20} />
             </div>
-            <span className="text-center text-sm font-bold">{label}</span>
+            <span className="text-center text-xs font-bold sm:text-sm">{label}</span>
           </Link>
         ))}
       </div>

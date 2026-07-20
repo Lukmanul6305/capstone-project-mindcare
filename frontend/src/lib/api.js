@@ -58,6 +58,12 @@ export async function refreshAccessToken({ clearOnFail = true } = {}) {
   return token;
 }
 
+const apiCache = new Map();
+
+export function clearApiCache() {
+  apiCache.clear();
+}
+
 export async function apiRequest(path, options = {}) {
   const {
     method = "GET",
@@ -65,10 +71,17 @@ export async function apiRequest(path, options = {}) {
     headers,
     auth = true,
     retryOnAuthFail = true,
+    useCache = true, // Default to true for GET requests
   } = options;
 
   const urlPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${getApiBaseUrl()}${urlPath}`;
+  const cacheKey = `${method}:${urlPath}`;
+
+  // Return cached response for GET requests if available
+  if (method === "GET" && useCache && apiCache.has(cacheKey)) {
+    return apiCache.get(cacheKey);
+  }
 
   const nextHeaders = { ...(headers ?? {}) };
   const isFormData = body instanceof FormData;
@@ -112,12 +125,21 @@ export async function apiRequest(path, options = {}) {
     throw err;
   }
 
+  // Clear cache on mutations (POST, PUT, DELETE, etc.)
+  if (method !== "GET") {
+    clearApiCache();
+  } else if (useCache) {
+    // Cache the successful GET response
+    apiCache.set(cacheKey, json);
+  }
+
   return json;
 }
 
 export function clearAuth() {
   writeAppData("auth", null);
   writeAppData("user", null);
+  clearApiCache(); // Clear cache on logout
 }
 
 /**

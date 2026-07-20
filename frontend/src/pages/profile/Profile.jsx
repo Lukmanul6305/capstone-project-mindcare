@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiBriefcase, FiCalendar, FiCamera, FiLogOut, FiMail, FiMenu, FiUser } from "react-icons/fi";
+import { FiBriefcase, FiCalendar, FiCamera, FiLogOut, FiMail, FiUser } from "react-icons/fi";
 
 import AppSidebar from "../../components/layout/AppSidebar";
+import MobileTopBar from "../../components/layout/MobileTopBar";
+import { useAuthUser } from "../../hooks/useAuthUser";
 import { apiRequest, clearAuth } from "../../lib/api";
-import { readAppData, writeAppData } from "../../lib/storage";
 
 const apiBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/+$/, "").replace(/\/api$/i, "");
 
@@ -16,31 +17,11 @@ const getAvatarSrc = (avatar) => {
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { user, loadingUser, setUser } = useAuthUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [error, setError] = useState("");
-  const [user, setUser] = useState(readAppData("user", {}));
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const res = await apiRequest("/api/auth/me");
-        const nextUser = res?.payload?.user ?? {};
-        setUser(nextUser);
-        writeAppData("user", nextUser);
-      } catch (err) {
-        setError(err?.message || "Gagal mengambil data profile.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
 
   const initials = useMemo(() => {
     const words = (user?.name || user?.email || "User").trim().split(/\s+/);
@@ -79,8 +60,6 @@ const Profile = () => {
         });
         const nextUser = res?.payload ?? { ...user, avatar: reader.result };
         setUser(nextUser);
-        writeAppData("user", nextUser);
-        window.dispatchEvent(new Event("mindcare:user-updated"));
       } catch (err) {
         setError(err?.message || "Gagal menyimpan foto profile.");
       } finally {
@@ -107,18 +86,10 @@ const Profile = () => {
         <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} activeMenu="Profile" />
 
         <main className="flex-1 min-h-screen">
-          <div className="p-4 lg:hidden">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#1E293B] bg-white shadow-[4px_4px_0px_0px_#1E293B]"
-              aria-label="Buka menu"
-            >
-              <FiMenu size={20} />
-            </button>
-          </div>
+          <MobileTopBar title="Profile" onMenuClick={() => setSidebarOpen(true)} />
 
-          <div className="mx-auto max-w-4xl space-y-6 p-6 lg:p-10">
-            <div className="flex flex-col gap-4 pr-14 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mx-auto max-w-4xl space-y-6 p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:p-6 lg:p-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-bold uppercase tracking-wider text-[#8B5CF6]">Akun Saya</p>
                 <h1 className="mt-2 text-3xl font-extrabold text-[#1E293B]">Profile</h1>
@@ -139,7 +110,7 @@ const Profile = () => {
             ) : null}
 
             <section className="rounded-[24px] border-2 border-[#1E293B] bg-white p-6 shadow-[8px_8px_0px_0px_#1E293B]">
-              {loading ? (
+              {loadingUser ? (
                 <div className="flex min-h-72 items-center justify-center">
                   <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#8B5CF6] border-t-transparent"></div>
                 </div>

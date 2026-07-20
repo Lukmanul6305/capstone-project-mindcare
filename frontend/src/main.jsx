@@ -4,13 +4,16 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AlertPopupProvider } from "./components/ui/AlertPopupProvider";
 import "./index.css";
+import { AuthProvider } from "./context/AuthContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AlertPopupProvider>
-        <App />
-      </AlertPopupProvider>
+      <AuthProvider>
+        <AlertPopupProvider>
+          <App />
+        </AlertPopupProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

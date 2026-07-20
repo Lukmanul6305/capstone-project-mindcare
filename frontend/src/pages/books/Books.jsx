@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FiMenu } from "react-icons/fi";
+
+import MobileTopBar from "../../components/layout/MobileTopBar";
 import { Link } from "react-router-dom";
 
 import BookDetailModal from "../../components/books/BookDetailModal";
@@ -298,14 +299,7 @@ const Books = () => {
         <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} activeMenu="Rekomendasi Buku" />
 
         <main className="min-h-screen flex-1">
-          <div className="p-4 lg:hidden">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#1E293B] bg-white"
-            >
-              <FiMenu size={20} />
-            </button>
-          </div>
+          <MobileTopBar title="Rekomendasi Buku" onMenuClick={() => setSidebarOpen(true)} />
 
           <header className="flex flex-col gap-5 px-8 pt-6 pb-2 lg:flex-row lg:items-start lg:justify-between lg:pt-10 lg:pb-4">
             <div>
